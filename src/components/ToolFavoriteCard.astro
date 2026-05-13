@@ -1,0 +1,73 @@
+---
+import Icon from "@/components/Icon.astro";
+
+interface Props {
+  title: string;
+  description: string;
+  href: string;
+  icon: string;
+  label?: string;
+}
+
+const { title, description, href, icon, label } = Astro.props;
+---
+
+<a class="mini-card paper-card" href={href}>
+  <span class="mini-icon"><Icon name={icon} size={22} /></span>
+  <span>
+    {label && <small>{label}</small>}
+    <strong>{title}</strong>
+    <em>{description}</em>
+  </span>
+</a>
+
+<style>
+  .mini-card {
+    display: grid;
+    grid-template-columns: 42px 1fr;
+    align-items: start;
+    gap: 12px;
+    padding: 15px;
+    transition: transform 180ms ease-out, box-shadow 180ms ease-out;
+  }
+
+  .mini-card:hover {
+    box-shadow: 0 18px 40px rgba(23, 37, 54, 0.1);
+    transform: translateY(-2px);
+  }
+
+  .mini-icon {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    border: 1px solid #e6d7bd;
+    border-radius: 12px;
+    background: #fff7e8;
+    color: #c2410c;
+  }
+
+  small,
+  strong,
+  em {
+    display: block;
+    font-style: normal;
+  }
+
+  small {
+    color: #c2410c;
+    font-size: 0.72rem;
+    font-weight: 900;
+  }
+
+  strong {
+    margin-bottom: 2px;
+    font-size: 1rem;
+  }
+
+  em {
+    color: var(--muted);
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+</style>

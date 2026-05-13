@@ -1,0 +1,39 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import ProjectCard from "@/components/ProjectCard.astro";
+import { projects } from "@/data/projects";
+---
+
+<BaseLayout title="项目" description="Marchen 的项目、实验和开源作品。">
+  <div class="page-shell page">
+    <section class="page-hero paper-card">
+      <p class="eyebrow">Projects</p>
+      <h1>项目</h1>
+      <p>这里存放完整项目、课程实践、开源实验和一些还在打磨的想法。</p>
+    </section>
+    <section class="grid-auto">
+      {projects.map((project) => <ProjectCard project={project} />)}
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .page {
+    display: grid;
+    gap: 24px;
+  }
+
+  .page-hero {
+    padding: 34px;
+  }
+
+  h1 {
+    margin: 10px 0;
+    font-size: clamp(2.3rem, 6vw, 4rem);
+  }
+
+  .page-hero p:last-child {
+    margin: 0;
+    color: var(--muted);
+  }
+</style>

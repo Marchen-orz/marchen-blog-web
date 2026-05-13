@@ -1,0 +1,99 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import ArticleCard from "@/components/ArticleCard.astro";
+import Icon from "@/components/Icon.astro";
+
+const posts = (await getCollection("blog"))
+  .filter((post) => !post.data.draft && post.data.visibility === "public")
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+const tags = Array.from(new Set(posts.flatMap((post) => post.data.tags)));
+---
+
+<BaseLayout title="博客" description="Marchen 的技术文章和项目复盘。">
+  <div class="page-shell page">
+    <section class="page-hero paper-card">
+      <p class="eyebrow">Articles</p>
+      <h1>文章</h1>
+      <p>更系统的技术文章、项目复盘和学习笔记会放在这里。写给未来的自己，也写给偶然路过的人。</p>
+    </section>
+
+    <section id="search" class="search-box paper-card">
+      <Icon name="Search" size={20} />
+      <input type="search" placeholder="搜索功能预留：构建后可接入 Pagefind" aria-label="搜索文章" />
+    </section>
+
+    <div class="tag-row">
+      <a class="tag active" href="/blog">全部</a>
+      {tags.map((tag) => <span class="tag">#{tag}</span>)}
+    </div>
+
+    <section class="post-list">
+      {posts.map((post) => (
+        <ArticleCard
+          href={`/blog/${post.id}`}
+          title={post.data.title}
+          description={post.data.description}
+          date={post.data.pubDate}
+          tags={post.data.tags}
+          cover={post.data.cover}
+        />
+      ))}
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .page {
+    display: grid;
+    gap: 22px;
+  }
+
+  .page-hero {
+    padding: 34px;
+  }
+
+  h1 {
+    margin: 10px 0;
+    font-size: clamp(2.4rem, 6vw, 4rem);
+    line-height: 1.05;
+  }
+
+  .page-hero p:last-child {
+    max-width: 720px;
+    margin: 0;
+    color: var(--muted);
+  }
+
+  .search-box {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+  }
+
+  input {
+    min-width: 0;
+    width: 100%;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--ink);
+  }
+
+  .tag-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .tag.active {
+    background: #173142;
+    color: #fffaf0;
+  }
+
+  .post-list {
+    display: grid;
+    gap: 14px;
+  }
+</style>

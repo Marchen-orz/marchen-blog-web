@@ -1,0 +1,228 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Icon from "@/components/Icon.astro";
+import { siteConfig, timeline } from "@/data/site";
+---
+
+<BaseLayout title="关于" description="关于 Marchen、技术兴趣和写作理念。">
+  <div class="page-shell about">
+    <section class="about-hero">
+      <div>
+        <p class="eyebrow">About Marchen</p>
+        <h1>Hi，我是 <span>Marchen</span>。</h1>
+        <p class="lead">我喜欢构建、学习、记录和收藏有用的东西。这个博客是我的笔记本、作品集和知识库入口。</p>
+        <div class="tags">
+          <span class="tag"># TypeScript</span>
+          <span class="tag"># Systems</span>
+          <span class="tag"># Notes</span>
+          <span class="tag"># Tools</span>
+        </div>
+      </div>
+      <div class="portrait paper-card">
+        <span class="tape" aria-hidden="true"></span>
+        <img src={siteConfig.avatar} alt="Marchen 的头像插画" />
+        <p>Building, learning, and shipping tiny things that make life easier.</p>
+      </div>
+    </section>
+
+    <section class="about-grid">
+      <div class="paper-card panel">
+        <h2><Icon name="Sun" size={20} /> Now</h2>
+        <ul>
+          <li><strong>Learning</strong><span>分布式系统基础、缓存策略、性能调优。</span></li>
+          <li><strong>Building</strong><span>个人知识库和一组日常自动化小工具。</span></li>
+          <li><strong>Reading</strong><span>工程实践、设计系统和长期主义相关内容。</span></li>
+        </ul>
+      </div>
+      <div class="paper-card panel">
+        <h2><Icon name="Map" size={20} /> Journey so far</h2>
+        <div class="timeline">
+          {timeline.map((item) => (
+            <article>
+              <time>{item.date}</time>
+              <div>
+                <strong>{item.title}</strong>
+                <p>{item.description}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+      <div class="paper-card panel">
+        <h2><Icon name="Wrench" size={20} /> Tech & Interests</h2>
+        <div class="skill-groups">
+          <span>TypeScript</span><span>React</span><span>Astro</span><span>Node.js</span><span>PostgreSQL</span><span>Redis</span><span>Docker</span><span>Linux</span>
+        </div>
+      </div>
+      <div class="paper-card panel quote">
+        <span class="tape" aria-hidden="true"></span>
+        <h2><Icon name="PenLine" size={20} /> Writing Philosophy</h2>
+        <p>不要追求一次写完美，先把真实的问题、过程和判断留下来。</p>
+      </div>
+    </section>
+
+    <section class="paper-card connect">
+      <h2><Icon name="Send" size={20} /> Let's connect</h2>
+      <div>
+        {siteConfig.socials.map((item) => (
+          <a href={item.href}><Icon name={item.icon} size={20} /> <span>{item.name}</span></a>
+        ))}
+      </div>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .about {
+    display: grid;
+    gap: 28px;
+  }
+
+  .about-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 380px;
+    gap: 28px;
+    align-items: center;
+    padding-top: 22px;
+  }
+
+  h1 {
+    margin: 14px 0;
+    font-size: clamp(2.7rem, 7vw, 5.3rem);
+    line-height: 1.02;
+  }
+
+  h1 span {
+    text-decoration: underline;
+    text-decoration-color: rgba(249, 115, 22, 0.55);
+    text-decoration-thickness: 10px;
+    text-underline-offset: -2px;
+  }
+
+  .lead {
+    max-width: 700px;
+    color: var(--muted);
+    font-size: 1.1rem;
+  }
+
+  .tags,
+  .skill-groups,
+  .connect div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .portrait {
+    padding: 24px;
+    text-align: center;
+  }
+
+  .portrait img {
+    width: 220px;
+    height: 220px;
+    border-radius: 42px;
+  }
+
+  .portrait p {
+    margin: 12px auto 0;
+    max-width: 260px;
+    color: #32465d;
+    font-weight: 800;
+  }
+
+  .about-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.35fr;
+    gap: 18px;
+  }
+
+  .panel,
+  .connect {
+    padding: 24px;
+  }
+
+  h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 14px;
+    font-size: 1.05rem;
+  }
+
+  ul {
+    display: grid;
+    gap: 16px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li strong,
+  li span {
+    display: block;
+  }
+
+  li span,
+  .timeline p {
+    color: var(--muted);
+  }
+
+  .timeline {
+    display: grid;
+    gap: 18px;
+  }
+
+  .timeline article {
+    display: grid;
+    grid-template-columns: 92px 1fr;
+    gap: 18px;
+  }
+
+  .timeline time {
+    color: #1d4ed8;
+    font-weight: 900;
+  }
+
+  .timeline p {
+    margin: 4px 0 0;
+  }
+
+  .skill-groups span {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fffdf8;
+    padding: 6px 10px;
+    font-size: 0.86rem;
+    font-weight: 800;
+  }
+
+  .quote {
+    background: #fff7df;
+  }
+
+  .quote p {
+    margin: 26px 0 0;
+    color: #24364b;
+    font-size: 1.35rem;
+    font-weight: 900;
+  }
+
+  .connect a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: #fffdf8;
+    padding: 10px 12px;
+    font-weight: 900;
+  }
+
+  @media (max-width: 900px) {
+    .about-hero,
+    .about-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

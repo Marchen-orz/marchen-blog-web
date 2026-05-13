@@ -1,0 +1,194 @@
+---
+import Icon from "@/components/Icon.astro";
+import { siteConfig } from "@/data/site";
+
+const pathname = Astro.url.pathname;
+const navItems = [
+  { href: "/", label: "首页" },
+  { href: "/blog", label: "博客" },
+  { href: "/notes", label: "碎念" },
+  { href: "/projects", label: "项目" },
+  { href: "/tools", label: "工具" },
+  { href: "/favorites", label: "收藏" },
+  { href: "/kb", label: "知识库", private: true },
+  { href: "/about", label: "关于" },
+];
+
+const isActive = (href: string) => href === "/" ? pathname === "/" : pathname.startsWith(href);
+---
+
+<header class="site-header">
+  <div class="page-shell header-inner">
+    <a class="brand" href="/" aria-label="Marchen 首页">
+      <span class="brand-mark">M</span>
+      <span>
+        <strong>{siteConfig.name}</strong>
+        <small>CS student · builder · collector</small>
+      </span>
+    </a>
+
+    <nav class="nav-links" aria-label="主导航">
+      {navItems.map((item) => (
+        <a
+          href={item.href}
+          class:list={["nav-link", { active: isActive(item.href), "private-link": item.private }]}
+          data-private-link={item.private ? "true" : undefined}
+        >
+          {item.label}
+        </a>
+      ))}
+    </nav>
+
+    <div class="header-actions">
+      <a href="/blog#search" aria-label="搜索">
+        <Icon name="Search" size={21} />
+      </a>
+      <a href="/rss.xml" aria-label="RSS">
+        <Icon name="Rss" size={21} />
+      </a>
+      <a href="https://github.com/marchen" aria-label="GitHub">
+        <Icon name="Github" size={21} />
+      </a>
+    </div>
+  </div>
+</header>
+
+<script define:vars={{ key: siteConfig.privateCookieKey, value: siteConfig.privateCookieValue }}>
+  const hasPrivateCookie = document.cookie.split(";").some((item) => item.trim() === `${key}=${value}`);
+  document.querySelectorAll("[data-private-link='true']").forEach((link) => {
+    link.classList.toggle("is-visible", hasPrivateCookie);
+  });
+</script>
+
+<style>
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    border-bottom: 1px solid rgba(229, 218, 203, 0.86);
+    background: rgba(253, 251, 247, 0.86);
+    backdrop-filter: blur(18px);
+  }
+
+  .header-inner {
+    display: grid;
+    grid-template-columns: 250px 1fr auto;
+    align-items: center;
+    gap: 22px;
+    min-height: 76px;
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  .brand-mark {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    border: 1px solid #d9c8ad;
+    border-radius: 11px;
+    background: #fff7e8;
+    color: #173142;
+    font-weight: 900;
+    box-shadow: 5px 5px 0 rgba(249, 115, 22, 0.18);
+  }
+
+  .brand strong,
+  .brand small {
+    display: block;
+    line-height: 1.25;
+  }
+
+  .brand strong {
+    color: var(--ink);
+    font-size: 1.18rem;
+    font-weight: 900;
+  }
+
+  .brand small {
+    color: var(--muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+
+  .nav-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px;
+  }
+
+  .nav-link {
+    border-radius: 10px;
+    padding: 8px 12px;
+    color: #24364b;
+    font-size: 0.9rem;
+    font-weight: 800;
+    transition: background 180ms ease-out, color 180ms ease-out;
+  }
+
+  .nav-link:hover,
+  .nav-link.active {
+    background: #173142;
+    color: #fffaf0;
+  }
+
+  .private-link {
+    display: none;
+  }
+
+  .private-link.is-visible {
+    display: inline-flex;
+  }
+
+  .header-actions {
+    display: inline-flex;
+    align-items: center;
+    justify-content: end;
+    gap: 12px;
+  }
+
+  .header-actions a {
+    display: grid;
+    width: 36px;
+    height: 36px;
+    place-items: center;
+    border-radius: 10px;
+    color: var(--ink);
+    transition: background 180ms ease-out, color 180ms ease-out;
+  }
+
+  .header-actions a:hover {
+    background: #fff0d6;
+    color: #c2410c;
+  }
+
+  @media (max-width: 960px) {
+    .header-inner {
+      grid-template-columns: 1fr auto;
+      padding-block: 12px;
+    }
+
+    .nav-links {
+      grid-column: 1 / -1;
+      justify-content: start;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .header-actions {
+      gap: 4px;
+    }
+
+    .brand small {
+      display: none;
+    }
+  }
+</style>

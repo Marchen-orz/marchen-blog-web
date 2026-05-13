@@ -1,0 +1,15 @@
+---
+import * as icons from "@lucide/astro";
+
+interface Props {
+  name: string;
+  size?: number;
+  class?: string;
+  strokeWidth?: number;
+}
+
+const { name, size = 20, class: className = "", strokeWidth = 2 } = Astro.props;
+const IconComponent = (icons as Record<string, any>)[name] ?? icons.Circle;
+---
+
+<IconComponent width={size} height={size} stroke-width={strokeWidth} class={className} aria-hidden="true" />

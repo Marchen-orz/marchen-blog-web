@@ -1,0 +1,133 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Icon from "@/components/Icon.astro";
+import { siteConfig } from "@/data/site";
+
+const notes = (await getCollection("notes")).sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+---
+
+<BaseLayout title="零星碎念" description="更轻量的日常记录、想法和朋友圈式笔记。">
+  <div class="page-shell page">
+    <section class="page-hero paper-card">
+      <p class="eyebrow">Notes</p>
+      <h1>零星碎念</h1>
+      <p>区别于博客，这里放更轻量、更短、更接近日常的记录。公开内容直接展示，私有内容需要 cookie 后可见。</p>
+    </section>
+
+    <section class="note-grid">
+      {notes.map((note) => (
+        <article class:list={["note-card", "paper-card", { "private-note": note.data.visibility === "private" }]} data-private-note={note.data.visibility === "private" ? "true" : undefined}>
+          <span class="pin" aria-hidden="true"></span>
+          <div class="note-top">
+            <time datetime={note.data.pubDate.toISOString()}>{note.data.pubDate.toLocaleDateString("zh-CN")}</time>
+            <span><Icon name={note.data.visibility === "private" ? "Lock" : "Globe2"} size={15} /> {note.data.visibility === "private" ? "个人可见" : "公开"}</span>
+          </div>
+          <h2>{note.data.title}</h2>
+          <p>{note.body}</p>
+          <div class="tags">
+            {note.data.tags.map((tag) => <span class="tag">#{tag}</span>)}
+          </div>
+        </article>
+      ))}
+    </section>
+  </div>
+</BaseLayout>
+
+<script define:vars={{ key: siteConfig.privateCookieKey, value: siteConfig.privateCookieValue }}>
+  const visible = document.cookie.split(";").some((item) => item.trim() === `${key}=${value}`);
+  document.querySelectorAll("[data-private-note='true']").forEach((note) => {
+    note.classList.toggle("is-visible", visible);
+  });
+</script>
+
+<style>
+  .page {
+    display: grid;
+    gap: 24px;
+  }
+
+  .page-hero {
+    padding: 34px;
+  }
+
+  h1 {
+    margin: 10px 0;
+    font-size: clamp(2.3rem, 6vw, 4rem);
+    line-height: 1.05;
+  }
+
+  .page-hero p:last-child {
+    max-width: 720px;
+    margin: 0;
+    color: var(--muted);
+  }
+
+  .note-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 18px;
+  }
+
+  .note-card {
+    min-height: 220px;
+    padding: 22px;
+  }
+
+  .note-card:nth-child(2n) {
+    transform: rotate(0.6deg);
+  }
+
+  .note-card:nth-child(3n) {
+    background: #fff7df;
+    transform: rotate(-0.5deg);
+  }
+
+  .private-note {
+    display: none;
+  }
+
+  .private-note.is-visible {
+    display: block;
+  }
+
+  .pin {
+    position: absolute;
+    top: -10px;
+    left: 32px;
+    width: 68px;
+    height: 22px;
+    transform: rotate(-5deg);
+    background: rgba(238, 211, 169, 0.78);
+  }
+
+  .note-top,
+  .note-top span,
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .note-top {
+    justify-content: space-between;
+    color: var(--muted);
+    font-size: 0.82rem;
+    font-weight: 800;
+  }
+
+  h2 {
+    margin: 18px 0 10px;
+    font-size: 1.25rem;
+  }
+
+  .note-card p {
+    margin: 0;
+    color: #32465d;
+  }
+
+  .tags {
+    margin-top: 18px;
+  }
+</style>

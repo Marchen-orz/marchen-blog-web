@@ -1,0 +1,221 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Icon from "@/components/Icon.astro";
+import ToolFavoriteCard from "@/components/ToolFavoriteCard.astro";
+import { tools } from "@/data/tools";
+
+const categories = Array.from(new Set(tools.map((item) => item.category)));
+---
+
+<BaseLayout title="工具" description="Marchen 收藏和自制的小工具集合。">
+  <div class="page-shell page">
+    <section class="page-hero paper-card">
+      <p class="eyebrow">Toolbox</p>
+      <h1>工具箱</h1>
+      <p>一些常用开发工具、编码转换和写作辅助。第一版先做静态与前端小工具，后续可继续扩展。</p>
+    </section>
+
+    <div class="tag-row">
+      <a class="tag active" href="/tools">全部</a>
+      {categories.map((category) => <span class="tag">{category}</span>)}
+    </div>
+
+    <section class="grid-auto">
+      {tools.map((tool) => (
+        <ToolFavoriteCard title={tool.name} description={tool.description} href={tool.href} icon={tool.icon} label={tool.category} />
+      ))}
+    </section>
+
+    <section class="tool-panels">
+      <div id="json" class="paper-card tool-panel">
+        <h2><Icon name="Braces" size={20} /> JSON 格式化</h2>
+        <textarea data-json-input>{"{\"name\":\"Marchen\",\"site\":\"blog\"}"}</textarea>
+        <div class="panel-actions">
+          <button data-json-format type="button">格式化</button>
+          <button data-json-minify type="button">压缩</button>
+        </div>
+      </div>
+
+      <div id="timestamp" class="paper-card tool-panel">
+        <h2><Icon name="Clock3" size={20} /> 时间戳转换</h2>
+        <input data-ts-input value="1767225600" />
+        <p data-ts-output>等待转换</p>
+        <button data-ts-convert type="button">转换为本地时间</button>
+      </div>
+
+      <div id="base64" class="paper-card tool-panel">
+        <h2><Icon name="Binary" size={20} /> Base64 编解码</h2>
+        <textarea data-base64-input>Marchen 的数字花园</textarea>
+        <div class="panel-actions">
+          <button data-base64-encode type="button">编码</button>
+          <button data-base64-decode type="button">解码</button>
+        </div>
+      </div>
+
+      <div id="colors" class="paper-card tool-panel">
+        <h2><Icon name="Palette" size={20} /> 站点色板</h2>
+        <div class="swatches">
+          <span style="--swatch:#FDFBF7">Paper</span>
+          <span style="--swatch:#172536">Ink</span>
+          <span style="--swatch:#F97316">Accent</span>
+          <span style="--swatch:#1D4ED8">Blue</span>
+        </div>
+      </div>
+    </section>
+  </div>
+</BaseLayout>
+
+<script>
+  const jsonInput = document.querySelector("[data-json-input]");
+  document.querySelector("[data-json-format]")?.addEventListener("click", () => {
+    if (!(jsonInput instanceof HTMLTextAreaElement)) return;
+    try {
+      jsonInput.value = JSON.stringify(JSON.parse(jsonInput.value), null, 2);
+    } catch {
+      jsonInput.value = "JSON 解析失败，请检查格式。";
+    }
+  });
+  document.querySelector("[data-json-minify]")?.addEventListener("click", () => {
+    if (!(jsonInput instanceof HTMLTextAreaElement)) return;
+    try {
+      jsonInput.value = JSON.stringify(JSON.parse(jsonInput.value));
+    } catch {
+      jsonInput.value = "JSON 解析失败，请检查格式。";
+    }
+  });
+
+  const tsInput = document.querySelector("[data-ts-input]");
+  const tsOutput = document.querySelector("[data-ts-output]");
+  document.querySelector("[data-ts-convert]")?.addEventListener("click", () => {
+    if (!(tsInput instanceof HTMLInputElement) || !tsOutput) return;
+    const raw = Number(tsInput.value.trim());
+    const time = raw > 9999999999 ? raw : raw * 1000;
+    tsOutput.textContent = Number.isFinite(time) ? new Date(time).toLocaleString("zh-CN") : "请输入有效时间戳";
+  });
+
+  const base64Input = document.querySelector("[data-base64-input]");
+  document.querySelector("[data-base64-encode]")?.addEventListener("click", () => {
+    if (!(base64Input instanceof HTMLTextAreaElement)) return;
+    base64Input.value = btoa(unescape(encodeURIComponent(base64Input.value)));
+  });
+  document.querySelector("[data-base64-decode]")?.addEventListener("click", () => {
+    if (!(base64Input instanceof HTMLTextAreaElement)) return;
+    try {
+      base64Input.value = decodeURIComponent(escape(atob(base64Input.value)));
+    } catch {
+      base64Input.value = "Base64 解码失败，请检查输入。";
+    }
+  });
+</script>
+
+<style>
+  .page {
+    display: grid;
+    gap: 24px;
+  }
+
+  .page-hero,
+  .tool-panel {
+    padding: 34px;
+  }
+
+  h1 {
+    margin: 10px 0;
+    font-size: clamp(2.3rem, 6vw, 4rem);
+  }
+
+  .page-hero p:last-child {
+    margin: 0;
+    color: var(--muted);
+  }
+
+  .tag-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .tag.active {
+    background: #173142;
+    color: #fffaf0;
+  }
+
+  .tool-panels {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+  }
+
+  .tool-panel h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 14px;
+    font-size: 1.15rem;
+  }
+
+  textarea,
+  input {
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: #fffdf8;
+    color: var(--ink);
+    padding: 12px;
+    outline: none;
+  }
+
+  textarea {
+    min-height: 150px;
+    resize: vertical;
+  }
+
+  .panel-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  button {
+    border: 1px solid #e1cfae;
+    border-radius: 10px;
+    background: var(--accent-soft);
+    padding: 8px 12px;
+    color: #6b2e05;
+    font-weight: 900;
+  }
+
+  [data-ts-output] {
+    min-height: 32px;
+    color: var(--muted);
+  }
+
+  .swatches {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+
+  .swatches span {
+    display: grid;
+    min-height: 90px;
+    align-items: end;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--swatch);
+    color: #fff;
+    padding: 10px;
+    font-weight: 900;
+  }
+
+  .swatches span:first-child {
+    color: var(--ink);
+  }
+
+  @media (max-width: 760px) {
+    .tool-panels,
+    .swatches {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
