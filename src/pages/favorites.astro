@@ -1,17 +1,26 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
+import Icon from "@/components/Icon.astro";
 import ToolFavoriteCard from "@/components/ToolFavoriteCard.astro";
 import { favorites } from "@/data/favorites";
 
 const categories = Array.from(new Set(favorites.map((item) => item.category)));
 ---
 
-<BaseLayout title="收藏" description="Marchen 收藏的技术文档、工具和常去的地方。">
+<BaseLayout title="收藏" description="Marchen 收藏的好用工具、灵感来源和常去的地方">
   <div class="page-shell page">
-    <section class="page-hero paper-card">
-      <p class="eyebrow">Favorites</p>
-      <h1>收藏</h1>
-      <p>外链收藏、技术文档、设计灵感和一些值得反复打开的网站。</p>
+    <section class="page-intro">
+      <div>
+        <p class="eyebrow">Favorites</p>
+        <h1>收藏</h1>
+        <p>技术文档、设计灵感和常用网站都收进来，像口袋清单一样随手翻</p>
+      </div>
+      <aside class="intro-note">
+        <span>用过觉得顺手，就先留下</span>
+        <a class="private-publish" href="/admin/manage?tab=favorites" data-private-action hidden>
+          <Icon name="BookmarkPlus" size={16} /> 管理收藏
+        </a>
+      </aside>
     </section>
 
     {categories.map((category) => (
@@ -19,7 +28,7 @@ const categories = Array.from(new Set(favorites.map((item) => item.category)));
         <div class="section-header">
           <h2 class="section-title">{category}</h2>
         </div>
-        <div class="grid-auto">
+        <div class="favorite-list">
           {favorites.filter((item) => item.category === category).map((item) => (
             <ToolFavoriteCard title={item.title} description={item.description} href={item.url} icon={item.icon} label={item.category} />
           ))}
@@ -35,17 +44,15 @@ const categories = Array.from(new Set(favorites.map((item) => item.category)));
     gap: 32px;
   }
 
-  .page-hero {
-    padding: 34px;
+  .favorite-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 24px;
   }
 
-  h1 {
-    margin: 10px 0;
-    font-size: clamp(2.3rem, 6vw, 4rem);
-  }
-
-  .page-hero p:last-child {
-    margin: 0;
-    color: var(--muted);
+  @media (max-width: 720px) {
+    .favorite-list {
+      grid-template-columns: 1fr;
+    }
   }
 </style>

@@ -8,84 +8,162 @@ interface Props {
   date: Date;
   tags?: string[];
   cover?: string;
+  readingMinutes?: number;
+  featured?: boolean;
 }
 
-const { href, title, description, date, tags = [], cover } = Astro.props;
+const { href, title, description, date, tags = [], cover, readingMinutes = 1, featured = false } = Astro.props;
+const dateLabel = date.toLocaleDateString("zh-CN", { month: "2-digit", day: "2-digit" });
 ---
 
-<article class="article-card paper-card">
-  {cover && <img src={cover} alt="" loading="lazy" />}
-  <div>
-    <time datetime={date.toISOString()}>{date.toLocaleDateString("zh-CN", { month: "2-digit", day: "2-digit" })}</time>
-    <h3><a href={href}>{title}</a></h3>
+<a class:list={["article-card", { featured }]} href={href} aria-label={`阅读：${title}`}>
+  {cover && (
+    <span class="cover-link">
+      <img src="/images/image-placeholder.svg" data-media-src={cover} alt="" loading="lazy" />
+    </span>
+  )}
+  <div class="article-body">
+    <div class="meta-line">
+      <time datetime={date.toISOString()}>{dateLabel}</time>
+      <span><Icon name="Clock3" size={14} /> {readingMinutes} 分钟</span>
+    </div>
+    <h3>{title}</h3>
     <p>{description}</p>
-    <div class="meta">
-      {tags.slice(0, 3).map((tag) => <span class="tag">#{tag}</span>)}
-      <a class="read-link" href={href}>阅读 <Icon name="ArrowRight" size={15} /></a>
+    <div class="bottom-line">
+      <div class="tags">
+        {tags.slice(0, 3).map((tag) => <span class="tag">#{tag}</span>)}
+      </div>
+      <span class="read-link">阅读全文 <Icon name="ArrowRight" size={15} /></span>
     </div>
   </div>
-</article>
+</a>
 
 <style>
   .article-card {
     display: grid;
-    grid-template-columns: 150px 1fr;
+    grid-template-columns: 124px minmax(0, 1fr);
     gap: 16px;
-    padding: 14px;
-    transition: transform 180ms ease-out, box-shadow 180ms ease-out;
+    align-items: stretch;
+    border-bottom: 1px solid var(--border-soft);
+    padding: 14px 5px;
+    transition: background 180ms ease-out, color 180ms ease-out, transform 180ms ease-out;
+  }
+
+  .article-card:first-child {
+    border-top: 1px solid var(--border-soft);
   }
 
   .article-card:hover {
-    box-shadow: 0 20px 48px rgba(23, 37, 54, 0.12);
-    transform: translateY(-2px);
+    color: var(--blue);
+    transform: translateX(2px);
+  }
+
+  .cover-link {
+    display: block;
+    min-width: 0;
+  }
+
+  .cover-link :global(.media-shell) {
+    width: 100%;
+    border-radius: 6px;
+  }
+
+  .article-card.featured {
+    grid-template-columns: 184px minmax(0, 1fr);
   }
 
   img {
     width: 100%;
-    height: 112px;
-    border-radius: 10px;
+    height: 92px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
     object-fit: cover;
+    background: var(--paper-soft);
   }
 
-  time {
-    color: var(--muted);
-    font-size: 0.8rem;
-    font-weight: 700;
+  .featured img {
+    height: 132px;
   }
 
-  h3 {
-    margin: 3px 0 7px;
-    font-size: 1.05rem;
-    line-height: 1.35;
+  .article-body {
+    display: grid;
+    align-content: center;
+    min-width: 0;
+    color: var(--ink);
   }
 
-  p {
-    margin: 0;
-    color: var(--muted);
-    font-size: 0.9rem;
-  }
-
-  .meta {
+  .meta-line,
+  .meta-line span,
+  .bottom-line,
+  .tags,
+  .read-link {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 8px;
-    margin-top: 12px;
   }
 
-  .read-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    margin-left: auto;
-    color: #c2410c;
-    font-size: 0.84rem;
+  .meta-line {
+    color: var(--muted);
+    font-size: 0.78rem;
     font-weight: 800;
   }
 
-  @media (max-width: 560px) {
-    .article-card {
-      grid-template-columns: 1fr;
+  h3 {
+    margin: 4px 0 5px;
+    color: var(--ink);
+    font-size: 1.08rem;
+    line-height: 1.38;
+    letter-spacing: 0;
+  }
+
+  .featured h3 {
+    font-size: 1.2rem;
+  }
+
+  p {
+    display: -webkit-box;
+    overflow: hidden;
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.9rem;
+    line-height: 1.65;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .bottom-line {
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 10px;
+  }
+
+  .read-link {
+    color: var(--blue);
+    font-size: 0.82rem;
+    font-weight: 900;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 620px) {
+    .article-card,
+    .article-card.featured {
+      grid-template-columns: 92px minmax(0, 1fr);
+      gap: 12px;
+    }
+
+    img,
+    .featured img {
+      height: 78px;
+    }
+
+    .tags {
+      display: none;
+    }
+
+    h3,
+    .featured h3 {
+      font-size: 1rem;
     }
   }
 </style>

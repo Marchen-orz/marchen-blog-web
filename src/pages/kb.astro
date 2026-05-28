@@ -1,36 +1,42 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import Icon from "@/components/Icon.astro";
-import { siteConfig } from "@/data/site";
+import PrivateNotFound from "@/components/PrivateNotFound.astro";
+import { hasPrivateAccess } from "@/lib/private-access";
 
 export const prerender = false;
 
-const hasPrivateAccess =
-  Astro.cookies.get(siteConfig.privateCookieKey)?.value === siteConfig.privateCookieValue;
+Astro.response.headers.set("Cache-Control", "private, no-store");
+Astro.response.headers.set("Vary", "Cookie");
 
-if (!hasPrivateAccess) {
+const canViewPrivate = hasPrivateAccess(Astro.cookies);
+
+if (!canViewPrivate) {
   Astro.response.status = 404;
 }
 ---
 
 <BaseLayout
-  title={hasPrivateAccess ? "个人知识库" : "页面未找到"}
-  description={hasPrivateAccess ? "Marchen 的私有知识库入口。" : "这个页面不存在或暂时不可访问。"}
+  title={canViewPrivate ? "个人知识库" : "页面未找到"}
+  description={canViewPrivate ? "Marchen 的私有知识库入口" : "这个页面暂时找不到"}
 >
   {
-    hasPrivateAccess ? (
+    canViewPrivate ? (
       <div class="page-shell page">
-        <section class="page-hero paper-card">
-          <p class="eyebrow">Private KB</p>
-          <h1>个人知识库</h1>
-          <p>这是预留给个人使用的知识库入口。后续接入第三方知识库问答 API。</p>
+        <section class="page-intro">
+          <div>
+            <p class="eyebrow">Private KB</p>
+            <h1>个人知识库</h1>
+            <p>这里先留给个人知识库，后续接入第三方问答 API</p>
+          </div>
+          <aside class="intro-note">私有内容，需要时再开</aside>
         </section>
 
-        <section class="paper-card kb-panel">
+        <section class="kb-panel">
           <span class="tape" aria-hidden="true"></span>
           <Icon name="BrainCircuit" size={32} />
           <h2>知识库问答预留</h2>
-          <p>后续这里会接入 <code>/api/kb/ask</code>，由服务端转发到第三方知识库 API，并展示回答与引用来源。</p>
+          <p>后续这里会接入 <code>/api/kb/ask</code>，由服务端转发到第三方知识库 API，再展示回答和引用来源</p>
           <form>
             <label for="question">问题</label>
             <textarea id="question" placeholder="例如：我之前写过哪些关于 Astro 的内容？"></textarea>
@@ -40,14 +46,7 @@ if (!hasPrivateAccess) {
       </div>
     ) : (
       <div class="page-shell page">
-        <section class="paper-card not-found">
-          <span class="tape" aria-hidden="true"></span>
-          <Icon name="FileQuestion" size={38} />
-          <p class="eyebrow">404</p>
-          <h1>页面未找到</h1>
-          <p>你访问的页面不存在，或者暂时不可访问。</p>
-          <a class="button" href="/"><Icon name="ArrowLeft" size={18} /> 返回首页</a>
-        </section>
+        <PrivateNotFound />
       </div>
     )
   }
@@ -59,20 +58,14 @@ if (!hasPrivateAccess) {
     gap: 24px;
   }
 
-  .page-hero,
-  .kb-panel,
-  .not-found {
-    padding: 34px;
+  .kb-panel {
+    position: relative;
+    margin-top: 8px;
+    padding: 28px 0;
+    border-bottom: 1px solid var(--border-soft);
   }
 
-  h1 {
-    margin: 10px 0;
-    font-size: clamp(2.3rem, 6vw, 4rem);
-  }
-
-  .page-hero p:last-child,
-  .kb-panel p,
-  .not-found p {
+  .kb-panel p {
     max-width: 760px;
     color: var(--muted);
   }
@@ -83,9 +76,9 @@ if (!hasPrivateAccess) {
 
   code {
     border-radius: 6px;
-    background: #f1eadf;
+    background: var(--code-inline-bg);
     padding: 2px 6px;
-    color: #92310a;
+    color: var(--code-inline-text);
   }
 
   form {
@@ -101,9 +94,9 @@ if (!hasPrivateAccess) {
 
   textarea {
     min-height: 170px;
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    background: #fffdf8;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
     padding: 14px;
     color: var(--ink);
     resize: vertical;
@@ -111,27 +104,12 @@ if (!hasPrivateAccess) {
 
   button {
     justify-self: start;
-    border: 1px solid #e1cfae;
-    border-radius: 10px;
-    background: var(--accent-soft);
+    border: 1px solid var(--tag-border);
+    border-radius: 6px;
+    background: var(--orange-soft);
     padding: 9px 14px;
-    color: #6b2e05;
+    color: var(--orange);
     font-weight: 900;
   }
 
-  .not-found {
-    min-height: 440px;
-    display: grid;
-    align-content: center;
-    justify-items: start;
-  }
-
-  .not-found h1 {
-    margin-bottom: 8px;
-  }
-
-  .not-found .button {
-    margin-top: 18px;
-    padding: 0 16px;
-  }
 </style>

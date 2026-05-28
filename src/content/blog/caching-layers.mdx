@@ -1,47 +1,12 @@
 ---
-title: "从浏览器到数据库：理解缓存层"
-description: "一次梳理浏览器缓存、HTTP 缓存、应用缓存和数据库缓存的实践笔记。"
-pubDate: 2026-05-12
-updatedDate: 2026-05-12
-tags: ["系统设计", "缓存", "Redis", "性能"]
+title: "缓存分层设计"
+description: "浏览器缓存、CDN 缓存和应用缓存的配合使用"
+pubDate: 2026-04-10
+tags: ["性能", "缓存", "架构"]
 category: "系统设计"
 draft: false
-cover: "/images/blog-cache.svg"
-syncToKb: true
+cover: "https://images.unsplash.com/photo-1555099962-4199c345e5dd?w=1200&h=630&fit=crop"
 visibility: "public"
 ---
 
-缓存不是“越多越快”，而是把正确的数据放在正确的位置，并知道什么时候让它失效。
-
-## 为什么需要缓存
-
-网络、磁盘和数据库查询都有成本。缓存可以复用昂贵计算的结果，也可以让用户在弱网络环境下仍然得到可接受的体验。
-
-## 缓存层级
-
-1. 浏览器内存缓存，适合短生命周期的小资源。
-2. HTTP 缓存，依赖 `Cache-Control`、`ETag` 和 CDN。
-3. 应用缓存，常见于 Redis 或本地 LRU。
-4. 数据库缓存，通常是查询计划、页缓存或物化视图。
-
-```ts
-const cacheKey = `user:${userId}`;
-const cached = await redis.get(cacheKey);
-
-if (cached) {
-  return JSON.parse(cached);
-}
-
-const user = await db.user.findUnique({ where: { id: userId } });
-await redis.set(cacheKey, JSON.stringify(user), { EX: 60 });
-return user;
-```
-
-## 实践清单
-
-- 先定义缓存的数据边界，再选择缓存位置。
-- 失效策略要比“缓存多久”更重要。
-- 给缓存 key 加版本号，避免结构变化造成脏读。
-- 监控命中率、延迟和回源量。
-
-缓存的目标不是让系统看起来复杂，而是让用户更稳定地获得结果。
+缓存是提升性能的关键，但多层缓存配合不好反而会带来数据一致性问题

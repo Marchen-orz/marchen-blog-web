@@ -1,68 +1,112 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import Icon from "@/components/Icon.astro";
-import { siteConfig, timeline } from "@/data/site";
+import { siteConfig } from "@/data/site";
+
+const skillGroups = [
+  {
+    icon: "Bot",
+    title: "AI 应用",
+    text: "关注大模型应用、Agent、MCP 和工作流搭建，喜欢把重复流程拆成能自动跑的小系统",
+    tags: ["Agent", "MCP", "Dify", "Coze", "AI Workflow"],
+  },
+  {
+    icon: "Server",
+    title: "全栈开发",
+    text: "会从前端界面一路接到 API、数据库和部署，做东西时更在意它能不能稳定上线",
+    tags: ["Vue", "Uni-app", "Node.js", "FastAPI", "RESTful API"],
+  },
+  {
+    icon: "WandSparkles",
+    title: "工具化",
+    text: "喜欢写脚本和小工具，把数据处理、批量操作、接口集成这些琐事变得更省心",
+    tags: ["Python", "Automation", "Golang", "Database", "ECharts"],
+  },
+];
+
+const timeline = [
+  { icon: "Rocket", label: "2026", text: "小站重启，把文章、项目、碎念和工具重新整理成更顺手的入口" },
+  { icon: "Brain", label: "2025", text: "开始深入 AI 应用开发，搭建第一个知识库和自动化工作流" },
+  { icon: "Code", label: "2024", text: "公开记录学习笔记和踩坑经验，做出第一批能跑起来的效率工具" },
+  { icon: "Sparkles", label: "更早", text: "从前端入坑，一路折腾到全栈，始终保持对新产品和技术的好奇心" },
+];
 ---
 
-<BaseLayout title="关于" description="关于 Marchen、技术兴趣和写作理念。">
+<BaseLayout title="关于" description="关于 Marchen 和正在折腾的各种有趣小东西">
   <div class="page-shell about">
+    <!-- Hero: 居中布局，头像 + 名字 + 一句话 -->
     <section class="about-hero">
-      <div>
-        <p class="eyebrow">About Marchen</p>
-        <h1>Hi，我是 <span>Marchen</span>。</h1>
-        <p class="lead">我喜欢构建、学习、记录和收藏有用的东西。这个博客是我的笔记本、作品集和知识库入口。</p>
-        <div class="tags">
-          <span class="tag"># TypeScript</span>
-          <span class="tag"># Systems</span>
-          <span class="tag"># Notes</span>
-          <span class="tag"># Tools</span>
-        </div>
+      <div class="hero-avatar">
+        <img src="/images/image-placeholder.svg" data-media-src={siteConfig.avatar} alt="Marchen" />
       </div>
-      <div class="portrait paper-card">
-        <span class="tape" aria-hidden="true"></span>
-        <img src={siteConfig.avatar} alt="Marchen 的头像插画" />
-        <p>Building, learning, and shipping tiny things that make life easier.</p>
+      <h1>Marchen</h1>
+      <p class="hero-sub">Full-stack / AI app / tiny tools</p>
+      <p class="hero-bio">一个喜欢把想法从界面、接口、数据到上线都跑通的人，这个站是折腾记录、工具收藏和碎碎念的大本营</p>
+    </section>
+
+    <!-- 技术坐标：三列卡片 -->
+    <section class="about-section">
+      <div class="section-heading">
+        <p class="eyebrow">What I Build</p>
+        <h2>技术坐标</h2>
+      </div>
+      <div class="skill-map">
+        {skillGroups.map((group) => (
+          <article>
+            <div class="skill-title">
+              <span><Icon name={group.icon} size={20} /></span>
+              <h3>{group.title}</h3>
+            </div>
+            <p>{group.text}</p>
+            <div class="skill-tags">
+              {group.tags.map((tag) => <span>{tag}</span>)}
+            </div>
+          </article>
+        ))}
       </div>
     </section>
 
-    <section class="about-grid">
-      <div class="paper-card panel">
-        <h2><Icon name="Sun" size={20} /> Now</h2>
-        <ul>
-          <li><strong>Learning</strong><span>分布式系统基础、缓存策略、性能调优。</span></li>
-          <li><strong>Building</strong><span>个人知识库和一组日常自动化小工具。</span></li>
-          <li><strong>Reading</strong><span>工程实践、设计系统和长期主义相关内容。</span></li>
+    <!-- 时间线 -->
+    <section class="about-section">
+      <div class="section-heading">
+        <p class="eyebrow">Journey</p>
+        <h2>折腾路线</h2>
+      </div>
+      <ol class="timeline">
+        {timeline.map((item) => (
+          <li>
+            <div class="tl-dot"><Icon name={item.icon} size={16} /></div>
+            <div class="tl-body">
+              <span class="tl-label">{item.label}</span>
+              <p>{item.text}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </section>
+
+    <!-- 当前关注 + 便签 -->
+    <section class="about-section split">
+      <div>
+        <div class="section-heading">
+          <p class="eyebrow">Current Focus</p>
+          <h2>最近在关心</h2>
+        </div>
+        <ul class="focus-list">
+          <li><b>AI 工作流</b><span>把知识库、自动化和工具调用拼成真正能省时间的流程</span></li>
+          <li><b>前端体验</b><span>界面不只是能用，还要清楚、顺手、有自己的气质</span></li>
+          <li><b>后端与数据</b><span>接口、鉴权、数据库设计和性能优化都要一起考虑</span></li>
         </ul>
       </div>
-      <div class="paper-card panel">
-        <h2><Icon name="Map" size={20} /> Journey so far</h2>
-        <div class="timeline">
-          {timeline.map((item) => (
-            <article>
-              <time>{item.date}</time>
-              <div>
-                <strong>{item.title}</strong>
-                <p>{item.description}</p>
-              </div>
-            </article>
-          ))}
-        </div>
-      </div>
-      <div class="paper-card panel">
-        <h2><Icon name="Wrench" size={20} /> Tech & Interests</h2>
-        <div class="skill-groups">
-          <span>TypeScript</span><span>React</span><span>Astro</span><span>Node.js</span><span>PostgreSQL</span><span>Redis</span><span>Docker</span><span>Linux</span>
-        </div>
-      </div>
-      <div class="paper-card panel quote">
+      <div class="quote-note">
         <span class="tape" aria-hidden="true"></span>
-        <h2><Icon name="PenLine" size={20} /> Writing Philosophy</h2>
-        <p>不要追求一次写完美，先把真实的问题、过程和判断留下来。</p>
+        <p>比起完美的方案，我更喜欢一个能跑通的原型：先让核心成立，再慢慢把细节磨亮</p>
       </div>
     </section>
 
-    <section class="paper-card connect">
-      <h2><Icon name="Send" size={20} /> Let's connect</h2>
+    <!-- 联系方式 -->
+    <section class="connect">
+      <h2><Icon name="Send" size={20} /> 找到我</h2>
       <div>
         {siteConfig.socials.map((item) => (
           <a href={item.href}><Icon name={item.icon} size={20} /> <span>{item.name}</span></a>
@@ -75,154 +119,273 @@ import { siteConfig, timeline } from "@/data/site";
 <style>
   .about {
     display: grid;
-    gap: 28px;
+    gap: 38px;
   }
 
+  /* ── Hero：居中布局 ── */
   .about-hero {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 380px;
-    gap: 28px;
+    display: flex;
+    flex-direction: column;
     align-items: center;
-    padding-top: 22px;
+    text-align: center;
+    padding: 48px 0 36px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+
+  .hero-avatar {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid var(--border-strong);
+    box-shadow: 0 8px 28px var(--shadow-soft);
+    margin-bottom: 20px;
+  }
+
+  .hero-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 
   h1 {
-    margin: 14px 0;
-    font-size: clamp(2.7rem, 7vw, 5.3rem);
-    line-height: 1.02;
+    margin: 0;
+    font-size: 2.6rem;
+    line-height: 1.1;
+    color: var(--ink);
   }
 
-  h1 span {
-    text-decoration: underline;
-    text-decoration-color: rgba(249, 115, 22, 0.55);
-    text-decoration-thickness: 10px;
-    text-underline-offset: -2px;
-  }
-
-  .lead {
-    max-width: 700px;
+  .hero-sub {
+    margin: 8px 0 0;
     color: var(--muted);
-    font-size: 1.1rem;
-  }
-
-  .tags,
-  .skill-groups,
-  .connect div {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-
-  .portrait {
-    padding: 24px;
-    text-align: center;
-  }
-
-  .portrait img {
-    width: 220px;
-    height: 220px;
-    border-radius: 42px;
-  }
-
-  .portrait p {
-    margin: 12px auto 0;
-    max-width: 260px;
-    color: #32465d;
+    font-size: 1rem;
     font-weight: 800;
+    letter-spacing: 0.02em;
   }
 
-  .about-grid {
+  .hero-bio {
+    max-width: 520px;
+    margin: 18px auto 0;
+    color: var(--muted);
+    font-size: 1rem;
+    line-height: 1.82;
+  }
+
+  /* ── Section 通用 ── */
+  .about-section {
     display: grid;
-    grid-template-columns: 1fr 1.35fr;
+    gap: 18px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+
+  .section-heading h2,
+  .about-section h2 {
+    margin: 6px 0 0;
+    font-size: 1.45rem;
+    line-height: 1.2;
+  }
+
+  /* ── 技术坐标 ── */
+  .skill-map {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 18px;
   }
 
-  .panel,
-  .connect {
-    padding: 24px;
+  .skill-map article {
+    display: grid;
+    align-content: start;
+    gap: 12px;
+    border-top: 2px solid var(--blue);
+    padding-top: 14px;
   }
 
-  h2 {
+  .skill-title {
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin: 0 0 14px;
+    gap: 10px;
+  }
+
+  .skill-title span {
+    display: grid;
+    width: 36px;
+    height: 36px;
+    place-items: center;
+    border: 1px solid var(--tag-border);
+    border-radius: 6px;
+    background: var(--blue-soft);
+    color: var(--blue);
+  }
+
+  h3 {
+    margin: 0;
     font-size: 1.05rem;
   }
 
-  ul {
-    display: grid;
-    gap: 16px;
+  .skill-map p {
     margin: 0;
+    color: var(--muted);
+    font-size: 0.92rem;
+    line-height: 1.72;
+  }
+
+  .skill-tags,
+  .connect div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .skill-tags span {
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 4px 8px;
+    color: var(--ink-2);
+    font-size: 0.76rem;
+    font-weight: 800;
+  }
+
+  /* ── 时间线 ── */
+  .timeline {
+    display: grid;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-left: 2px solid var(--border);
+    margin-left: 14px;
+  }
+
+  .timeline li {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr);
+    gap: 14px;
+    padding: 16px 0;
+    position: relative;
+  }
+
+  .tl-dot {
+    display: grid;
+    width: 32px;
+    height: 32px;
+    place-items: center;
+    border: 2px solid var(--blue);
+    border-radius: 50%;
+    background: var(--surface);
+    color: var(--blue);
+    position: relative;
+    left: -17px;
+  }
+
+  .tl-body {
+    padding-top: 4px;
+  }
+
+  .tl-label {
+    display: inline-block;
+    margin-bottom: 4px;
+    color: var(--blue);
+    font-size: 0.82rem;
+    font-weight: 900;
+    letter-spacing: 0.02em;
+  }
+
+  .tl-body p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.94rem;
+    line-height: 1.72;
+  }
+
+  /* ── Split：关注 + 便签 ── */
+  .split {
+    grid-template-columns: minmax(0, 1fr) 330px;
+    gap: 34px;
+    align-items: start;
+  }
+
+  .focus-list {
+    display: grid;
+    gap: 14px;
+    margin: 14px 0 0;
     padding: 0;
     list-style: none;
   }
 
-  li strong,
-  li span {
-    display: block;
+  .focus-list li {
+    display: grid;
+    grid-template-columns: 108px minmax(0, 1fr);
+    gap: 16px;
+    padding: 12px 0;
+    border-top: 1px solid var(--border-soft);
   }
 
-  li span,
-  .timeline p {
+  .focus-list b {
+    color: var(--ink);
+  }
+
+  .focus-list span {
     color: var(--muted);
   }
 
-  .timeline {
-    display: grid;
-    gap: 18px;
-  }
-
-  .timeline article {
-    display: grid;
-    grid-template-columns: 92px 1fr;
-    gap: 18px;
-  }
-
-  .timeline time {
-    color: #1d4ed8;
-    font-weight: 900;
-  }
-
-  .timeline p {
-    margin: 4px 0 0;
-  }
-
-  .skill-groups span {
-    border: 1px solid var(--line);
+  .quote-note {
+    position: relative;
+    border: 1px solid var(--border-strong);
     border-radius: 8px;
-    background: #fffdf8;
-    padding: 6px 10px;
-    font-size: 0.86rem;
-    font-weight: 800;
+    background: var(--note-bg);
+    padding: 22px;
+    transform: rotate(-1.2deg);
   }
 
-  .quote {
-    background: #fff7df;
+  .quote-note p {
+    margin: 0;
+    color: var(--ink-2);
+    font-family: var(--font-note);
+    font-size: 1.16rem;
+    line-height: 1.88;
   }
 
-  .quote p {
-    margin: 26px 0 0;
-    color: #24364b;
-    font-size: 1.35rem;
-    font-weight: 900;
+  /* ── 联系方式 ── */
+  .connect {
+    display: grid;
+    gap: 12px;
+  }
+
+  .connect h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font-size: 1.05rem;
   }
 
   .connect a {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    background: #fffdf8;
-    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    padding: 8px 0;
+    color: var(--ink-2);
     font-weight: 900;
   }
 
-  @media (max-width: 900px) {
-    .about-hero,
-    .about-grid {
+  /* ── 响应式 ── */
+  @media (max-width: 920px) {
+    .split,
+    .skill-map {
       grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .focus-list li {
+      grid-template-columns: 1fr;
+      gap: 4px;
+    }
+
+    .timeline li {
+      grid-template-columns: 36px minmax(0, 1fr);
     }
   }
 </style>

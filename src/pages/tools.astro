@@ -1,112 +1,519 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import Icon from "@/components/Icon.astro";
-import ToolFavoriteCard from "@/components/ToolFavoriteCard.astro";
 import { tools } from "@/data/tools";
 
 const categories = Array.from(new Set(tools.map((item) => item.category)));
+const readyCount = tools.filter((item) => item.status !== "draft").length;
 ---
 
-<BaseLayout title="工具" description="Marchen 收藏和自制的小工具集合。">
+<BaseLayout title="工具" description="Marchen 收藏和自制的小工具集合">
   <div class="page-shell page">
-    <section class="page-hero paper-card">
-      <p class="eyebrow">Toolbox</p>
-      <h1>工具箱</h1>
-      <p>一些常用开发工具、编码转换和写作辅助。第一版先做静态与前端小工具，后续可继续扩展。</p>
+    <section class="page-intro compact-intro">
+      <div>
+        <p class="eyebrow">Toolbox</p>
+        <h1>工具箱</h1>
+        <p>先点工具，再在下方展开工作区，清单和面板分开，后续加新工具也不乱</p>
+      </div>
+      <aside class="intro-note">
+        <strong>{readyCount}</strong> 个可用工具<br />
+        <span>{categories.length} 个分类</span>
+        <a class="private-publish" href="/admin/manage?tab=tools" data-private-action hidden>
+          <Icon name="ListOrdered" size={16} /> 管理工具
+        </a>
+      </aside>
     </section>
 
-    <div class="tag-row">
-      <a class="tag active" href="/tools">全部</a>
-      {categories.map((category) => <span class="tag">{category}</span>)}
-    </div>
-
-    <section class="grid-auto">
-      {tools.map((tool) => (
-        <ToolFavoriteCard title={tool.name} description={tool.description} href={tool.href} icon={tool.icon} label={tool.category} />
-      ))}
-    </section>
-
-    <section class="tool-panels">
-      <div id="json" class="paper-card tool-panel">
-        <h2><Icon name="Braces" size={20} /> JSON 格式化</h2>
-        <textarea data-json-input>{"{\"name\":\"Marchen\",\"site\":\"blog\"}"}</textarea>
-        <div class="panel-actions">
-          <button data-json-format type="button">格式化</button>
-          <button data-json-minify type="button">压缩</button>
+    <section id="tool-index" class="tool-index" data-tool-app>
+      <div class="tool-index-head">
+        <div>
+          <h2>工具清单</h2>
+          <p>点一个工具，下方就展开对应面板；分类按钮负责快速筛选</p>
+        </div>
+        <div class="filter-row" aria-label="工具分类筛选">
+          <button class="filter-button is-active" type="button" data-filter="all">全部</button>
+          {categories.map((category) => <button class="filter-button" type="button" data-filter={category}>{category}</button>)}
         </div>
       </div>
 
-      <div id="timestamp" class="paper-card tool-panel">
-        <h2><Icon name="Clock3" size={20} /> 时间戳转换</h2>
-        <input data-ts-input value="1767225600" />
-        <p data-ts-output>等待转换</p>
-        <button data-ts-convert type="button">转换为本地时间</button>
+      <div class="tool-grid" data-tool-grid>
+        {
+          tools.map((tool, index) => (
+            <a
+              class:list={["tool-card", index === 0 && "is-active", tool.status === "draft" && "is-draft"]}
+              href={`#${tool.id}`}
+              data-tool-card
+              data-tool-id={tool.id}
+              data-category={tool.category}
+              aria-current={index === 0 ? "true" : "false"}
+            >
+              <span class="tool-icon"><Icon name={tool.icon} size={20} /></span>
+              <span class="tool-copy">
+                <span class="tool-title">
+                  <strong>{tool.name}</strong>
+                  <small>{tool.status === "draft" ? "草稿" : tool.category}</small>
+                </span>
+                <em>{tool.description}</em>
+              </span>
+            </a>
+          ))
+        }
       </div>
 
-      <div id="base64" class="paper-card tool-panel">
-        <h2><Icon name="Binary" size={20} /> Base64 编解码</h2>
-        <textarea data-base64-input>Marchen 的数字花园</textarea>
-        <div class="panel-actions">
-          <button data-base64-encode type="button">编码</button>
-          <button data-base64-decode type="button">解码</button>
+      <p class="empty-state" data-empty-state hidden>这个分类暂时还空着</p>
+    </section>
+
+    <section class="tool-stage" data-tool-stage aria-live="polite">
+      <article id="json" class="tool-panel is-active" data-tool-panel data-panel-id="json">
+        <div class="tool-panel-head">
+          <span><Icon name="Braces" size={20} /></span>
+          <div>
+            <h2>JSON 格式化</h2>
+            <p>粘贴 JSON 后格式化或压缩，出错会在状态栏提醒</p>
+          </div>
         </div>
-      </div>
+        <div class="workspace two-column">
+          <textarea class="tool-control tool-textarea code-text" data-json-input data-default='{"name":"Marchen","site":"blog"}' spellcheck="false" aria-label="JSON 输入"></textarea>
+          <aside class="tool-aside">
+            <p class="tool-status" data-json-status>等待输入</p>
+            <div class="panel-actions">
+              <button class="tool-button primary" data-json-format type="button">格式化</button>
+              <button class="tool-button" data-json-minify type="button">压缩</button>
+            </div>
+          </aside>
+        </div>
+      </article>
 
-      <div id="colors" class="paper-card tool-panel">
-        <h2><Icon name="Palette" size={20} /> 站点色板</h2>
+      <article id="timestamp" class="tool-panel" data-tool-panel data-panel-id="timestamp" aria-hidden="true">
+        <div class="tool-panel-head">
+          <span><Icon name="Clock3" size={20} /></span>
+          <div>
+            <h2>时间戳转换</h2>
+            <p>支持秒级和毫秒级 Unix 时间戳，输出跟着本地时区走</p>
+          </div>
+        </div>
+        <div class="workspace split-line">
+          <label>
+            <span>时间戳</span>
+            <input class="tool-control code-text" data-ts-input value="1767225600" inputmode="numeric" aria-label="时间戳输入" />
+          </label>
+          <output class="tool-result" data-ts-output>等待转换</output>
+          <div class="panel-actions">
+            <button class="tool-button primary" data-ts-convert type="button">转换为本地时间</button>
+            <button class="tool-button" data-ts-now type="button">当前时间</button>
+          </div>
+        </div>
+      </article>
+
+      <article id="base64" class="tool-panel" data-tool-panel data-panel-id="base64" aria-hidden="true">
+        <div class="tool-panel-head">
+          <span><Icon name="Binary" size={20} /></span>
+          <div>
+            <h2>Base64 编解码</h2>
+            <p>支持中文内容，编码和解码都在同一个输入区完成</p>
+          </div>
+        </div>
+        <div class="workspace two-column">
+          <textarea class="tool-control tool-textarea code-text" data-base64-input data-default="Marchen的小站" spellcheck="false" aria-label="Base64 输入"></textarea>
+          <aside class="tool-aside">
+            <p class="tool-status" data-base64-status>等待输入</p>
+            <div class="panel-actions">
+              <button class="tool-button primary" data-base64-encode type="button">编码</button>
+              <button class="tool-button" data-base64-decode type="button">解码</button>
+            </div>
+          </aside>
+        </div>
+      </article>
+
+      <article id="url" class="tool-panel" data-tool-panel data-panel-id="url" aria-hidden="true">
+        <div class="tool-panel-head">
+          <span><Icon name="Link" size={20} /></span>
+          <div>
+            <h2>URL 编解码</h2>
+            <p>给链接、query 参数和中文路径做 encodeURIComponent / decodeURIComponent</p>
+          </div>
+        </div>
+        <div class="workspace two-column">
+          <textarea class="tool-control tool-textarea code-text" data-url-input data-default="https://marchen.dev/search?q=个人站&tag=工具" spellcheck="false" aria-label="URL 输入"></textarea>
+          <aside class="tool-aside">
+            <p class="tool-status" data-url-status>等待输入</p>
+            <div class="panel-actions">
+              <button class="tool-button primary" data-url-encode type="button">编码</button>
+              <button class="tool-button" data-url-decode type="button">解码</button>
+            </div>
+          </aside>
+        </div>
+      </article>
+
+      <article id="uuid" class="tool-panel" data-tool-panel data-panel-id="uuid" aria-hidden="true">
+        <div class="tool-panel-head">
+          <span><Icon name="Fingerprint" size={20} /></span>
+          <div>
+            <h2>UUID 生成</h2>
+            <p>生成随机 UUID，一次可以来很多条</p>
+          </div>
+        </div>
+        <div class="workspace split-line">
+          <label>
+            <span>数量</span>
+            <input class="tool-control code-text" data-uuid-count value="5" inputmode="numeric" aria-label="UUID 数量" />
+          </label>
+          <textarea class="tool-control tool-textarea compact code-text" data-uuid-output readonly aria-label="UUID 输出"></textarea>
+          <div class="panel-actions">
+            <button class="tool-button primary" data-uuid-generate type="button">生成</button>
+            <button class="tool-button" data-copy-target="[data-uuid-output]" type="button">复制</button>
+          </div>
+        </div>
+      </article>
+
+      <article id="hash" class="tool-panel" data-tool-panel data-panel-id="hash" aria-hidden="true">
+        <div class="tool-panel-head">
+          <span><Icon name="Hash" size={20} /></span>
+          <div>
+            <h2>SHA-256 摘要</h2>
+            <p>在本地浏览器计算文本摘要，不上传内容</p>
+          </div>
+        </div>
+        <div class="workspace two-column">
+          <textarea class="tool-control tool-textarea code-text" data-hash-input data-default="Marchen" spellcheck="false" aria-label="摘要输入"></textarea>
+          <aside class="tool-aside">
+            <output class="tool-result hash-output" data-hash-output>等待计算</output>
+            <div class="panel-actions">
+              <button class="tool-button primary" data-hash-run type="button">计算 SHA-256</button>
+              <button class="tool-button" data-copy-target="[data-hash-output]" type="button">复制</button>
+            </div>
+          </aside>
+        </div>
+      </article>
+
+      <article id="text-stats" class="tool-panel" data-tool-panel data-panel-id="text-stats" aria-hidden="true">
+        <div class="tool-panel-head">
+          <span><Icon name="Pilcrow" size={20} /></span>
+          <div>
+            <h2>文本统计</h2>
+            <p>统计字符、中文、单词、行数和预估阅读时间</p>
+          </div>
+        </div>
+        <div class="workspace two-column">
+          <textarea class="tool-control tool-textarea" data-text-input data-default="把一段文字贴进来，看看它大概需要读多久" spellcheck="false" aria-label="文本统计输入"></textarea>
+          <aside class="stat-board" data-text-output>
+            <span>字符 <strong>0</strong></span>
+            <span>中文 <strong>0</strong></span>
+            <span>单词 <strong>0</strong></span>
+            <span>行数 <strong>0</strong></span>
+            <span>阅读 <strong>1 分钟</strong></span>
+          </aside>
+        </div>
+      </article>
+
+      <article id="regex" class="tool-panel" data-tool-panel data-panel-id="regex" aria-hidden="true">
+        <div class="tool-panel-head">
+          <span><Icon name="Regex" size={20} /></span>
+          <div>
+            <h2>正则测试</h2>
+            <p>输入表达式和测试文本，快速查看匹配数量</p>
+          </div>
+        </div>
+        <div class="workspace regex-grid">
+          <label>
+            <span>表达式</span>
+            <input class="tool-control code-text" data-regex-pattern value="\\b\\w+\\b" aria-label="正则表达式" />
+          </label>
+          <label>
+            <span>Flags</span>
+            <input class="tool-control code-text" data-regex-flags value="g" aria-label="正则 flags" />
+          </label>
+          <textarea class="tool-control tool-textarea compact code-text" data-regex-text data-default="Marchen writes code and notes." spellcheck="false" aria-label="正则测试文本"></textarea>
+          <output class="tool-result" data-regex-output>等待测试</output>
+          <div class="panel-actions">
+            <button class="tool-button primary" data-regex-run type="button">测试</button>
+          </div>
+        </div>
+      </article>
+
+      <article id="colors" class="tool-panel" data-tool-panel data-panel-id="colors" aria-hidden="true">
+        <div class="tool-panel-head">
+          <span><Icon name="Palette" size={20} /></span>
+          <div>
+            <h2>颜色速查</h2>
+            <p>当前页面使用的核心 token，后续可以接入自定义色板</p>
+          </div>
+        </div>
         <div class="swatches">
-          <span style="--swatch:#FDFBF7">Paper</span>
-          <span style="--swatch:#172536">Ink</span>
-          <span style="--swatch:#F97316">Accent</span>
-          <span style="--swatch:#1D4ED8">Blue</span>
+          <span style="--swatch:var(--paper); --swatch-text:var(--ink)">Paper<br /><small>var(--paper)</small></span>
+          <span style="--swatch:var(--ink); --swatch-text:var(--paper)">Ink<br /><small>var(--ink)</small></span>
+          <span style="--swatch:var(--orange); --swatch-text:var(--on-accent)">Accent<br /><small>var(--orange)</small></span>
+          <span style="--swatch:var(--blue); --swatch-text:var(--on-accent)">Blue<br /><small>var(--blue)</small></span>
         </div>
-      </div>
+      </article>
+
+      <article id="prompts" class="tool-panel" data-tool-panel data-panel-id="prompts" aria-hidden="true">
+        <div class="tool-panel-head">
+          <span><Icon name="Sparkles" size={20} /></span>
+          <div>
+            <h2>Prompt 抽屉</h2>
+            <p>这里先留空给后续提示词数据源，入口和展开逻辑已经接好</p>
+          </div>
+        </div>
+        <div class="placeholder-panel">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </article>
     </section>
+
+    <script>
+      function initTools() {
+        const app = document.querySelector("[data-tool-app]");
+        const stage = document.querySelector("[data-tool-stage]");
+        if (!(app instanceof HTMLElement) || !(stage instanceof HTMLElement) || app.dataset.ready === "true") return;
+        app.dataset.ready = "true";
+
+        const cards = Array.from(app.querySelectorAll("[data-tool-card]"));
+        const filters = Array.from(app.querySelectorAll("[data-filter]"));
+        const panels = Array.from(stage.querySelectorAll("[data-tool-panel]"));
+        const emptyState = app.querySelector("[data-empty-state]");
+
+        const setStatus = (target, message, isError = false) => {
+          if (!(target instanceof HTMLElement)) return;
+          target.textContent = message;
+          target.dataset.state = isError ? "error" : "ok";
+        };
+
+        const openTool = (id, shouldPushHash = true) => {
+          cards.forEach((card) => {
+            const active = card instanceof HTMLElement && card.dataset.toolId === id;
+            card.classList.toggle("is-active", active);
+            card.setAttribute("aria-current", active ? "true" : "false");
+          });
+          panels.forEach((panel) => {
+            if (!(panel instanceof HTMLElement)) return;
+            const active = panel.dataset.panelId === id;
+            panel.classList.toggle("is-active", active);
+            panel.setAttribute("aria-hidden", active ? "false" : "true");
+            panel.inert = !active;
+          });
+          if (shouldPushHash) history.replaceState(null, "", `#${id}`);
+        };
+
+        const visibleCards = () => cards.filter((card) => card instanceof HTMLElement && !card.hidden);
+
+        const scrollToToolIndex = (force = false) => {
+          const appTop = app.getBoundingClientRect().top + window.scrollY;
+          const header = document.querySelector("[data-site-header]");
+          const headerHeight = header instanceof HTMLElement ? header.offsetHeight : 0;
+          const targetTop = Math.max(0, appTop - headerHeight);
+          if (force || window.scrollY < targetTop - 2) {
+            window.scrollTo({ top: targetTop, behavior: "smooth" });
+          }
+        };
+
+        const applyFilter = (category) => {
+          filters.forEach((button) => button.classList.toggle("is-active", button instanceof HTMLElement && button.dataset.filter === category));
+          cards.forEach((card) => {
+            if (!(card instanceof HTMLElement)) return;
+            card.hidden = category !== "all" && card.dataset.category !== category;
+          });
+          const visible = visibleCards();
+          if (emptyState instanceof HTMLElement) emptyState.hidden = visible.length > 0;
+          const current = cards.find((card) => card instanceof HTMLElement && card.classList.contains("is-active") && !card.hidden);
+          if (!current && visible[0] instanceof HTMLElement) openTool(visible[0].dataset.toolId ?? "json", false);
+        };
+
+        filters.forEach((button) => {
+          button.addEventListener("click", () => {
+            if (!(button instanceof HTMLElement)) return;
+            applyFilter(button.dataset.filter ?? "all");
+          });
+        });
+
+        cards.forEach((card) => {
+          card.addEventListener("click", (event) => {
+            event.preventDefault();
+            if (!(card instanceof HTMLElement)) return;
+            openTool(card.dataset.toolId ?? "json");
+            scrollToToolIndex();
+          });
+        });
+
+        const hydrateTextareas = () => {
+          document.querySelectorAll("textarea[data-default]").forEach((input) => {
+            if (input instanceof HTMLTextAreaElement && !input.value) input.value = input.dataset.default ?? "";
+          });
+        };
+
+        hydrateTextareas();
+
+        const jsonInput = stage.querySelector("[data-json-input]");
+        const jsonStatus = stage.querySelector("[data-json-status]");
+        stage.querySelector("[data-json-format]")?.addEventListener("click", () => {
+          if (!(jsonInput instanceof HTMLTextAreaElement)) return;
+          try {
+            jsonInput.value = JSON.stringify(JSON.parse(jsonInput.value), null, 2);
+            setStatus(jsonStatus, "JSON 已格式化");
+          } catch {
+            setStatus(jsonStatus, "JSON 解析失败，请检查格式", true);
+          }
+        });
+        stage.querySelector("[data-json-minify]")?.addEventListener("click", () => {
+          if (!(jsonInput instanceof HTMLTextAreaElement)) return;
+          try {
+            jsonInput.value = JSON.stringify(JSON.parse(jsonInput.value));
+            setStatus(jsonStatus, "JSON 已压缩");
+          } catch {
+            setStatus(jsonStatus, "JSON 解析失败，请检查格式", true);
+          }
+        });
+
+        const tsInput = stage.querySelector("[data-ts-input]");
+        const tsOutput = stage.querySelector("[data-ts-output]");
+        const formatTimestamp = () => {
+          if (!(tsInput instanceof HTMLInputElement) || !(tsOutput instanceof HTMLOutputElement)) return;
+          const raw = Number(tsInput.value.trim());
+          if (!Number.isFinite(raw)) {
+            tsOutput.value = "请输入有效时间戳";
+            tsOutput.dataset.state = "error";
+            return;
+          }
+          const time = raw > 9999999999 ? raw : raw * 1000;
+          tsOutput.value = new Date(time).toLocaleString("zh-CN", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+          });
+          tsOutput.dataset.state = "ok";
+        };
+        stage.querySelector("[data-ts-convert]")?.addEventListener("click", formatTimestamp);
+        stage.querySelector("[data-ts-now]")?.addEventListener("click", () => {
+          if (!(tsInput instanceof HTMLInputElement)) return;
+          tsInput.value = String(Math.floor(Date.now() / 1000));
+          formatTimestamp();
+        });
+
+        const base64Input = stage.querySelector("[data-base64-input]");
+        const base64Status = stage.querySelector("[data-base64-status]");
+        stage.querySelector("[data-base64-encode]")?.addEventListener("click", () => {
+          if (!(base64Input instanceof HTMLTextAreaElement)) return;
+          base64Input.value = btoa(unescape(encodeURIComponent(base64Input.value)));
+          setStatus(base64Status, "已编码为 Base64");
+        });
+        stage.querySelector("[data-base64-decode]")?.addEventListener("click", () => {
+          if (!(base64Input instanceof HTMLTextAreaElement)) return;
+          try {
+            base64Input.value = decodeURIComponent(escape(atob(base64Input.value)));
+            setStatus(base64Status, "Base64 已解码");
+          } catch {
+            setStatus(base64Status, "Base64 解码失败，请检查输入", true);
+          }
+        });
+
+        const urlInput = stage.querySelector("[data-url-input]");
+        const urlStatus = stage.querySelector("[data-url-status]");
+        stage.querySelector("[data-url-encode]")?.addEventListener("click", () => {
+          if (!(urlInput instanceof HTMLTextAreaElement)) return;
+          urlInput.value = encodeURIComponent(urlInput.value);
+          setStatus(urlStatus, "URL 已编码");
+        });
+        stage.querySelector("[data-url-decode]")?.addEventListener("click", () => {
+          if (!(urlInput instanceof HTMLTextAreaElement)) return;
+          try {
+            urlInput.value = decodeURIComponent(urlInput.value);
+            setStatus(urlStatus, "URL 已解码");
+          } catch {
+            setStatus(urlStatus, "URL 解码失败，请检查 % 转义", true);
+          }
+        });
+
+        const uuidOutput = stage.querySelector("[data-uuid-output]");
+        const uuidCount = stage.querySelector("[data-uuid-count]");
+        const generateUuid = () => {
+          if (!(uuidOutput instanceof HTMLTextAreaElement) || !(uuidCount instanceof HTMLInputElement)) return;
+          const count = Math.min(Math.max(Number.parseInt(uuidCount.value, 10) || 1, 1), 50);
+          uuidOutput.value = Array.from({ length: count }, () => crypto.randomUUID()).join("\n");
+        };
+        stage.querySelector("[data-uuid-generate]")?.addEventListener("click", generateUuid);
+        generateUuid();
+
+        const hashInput = stage.querySelector("[data-hash-input]");
+        const hashOutput = stage.querySelector("[data-hash-output]");
+        stage.querySelector("[data-hash-run]")?.addEventListener("click", async () => {
+          if (!(hashInput instanceof HTMLTextAreaElement) || !(hashOutput instanceof HTMLOutputElement)) return;
+          const bytes = new TextEncoder().encode(hashInput.value);
+          const buffer = await crypto.subtle.digest("SHA-256", bytes);
+          hashOutput.value = Array.from(new Uint8Array(buffer), (byte) => byte.toString(16).padStart(2, "0")).join("");
+          hashOutput.dataset.state = "ok";
+        });
+
+        const textInput = stage.querySelector("[data-text-input]");
+        const textOutput = stage.querySelector("[data-text-output]");
+        const updateTextStats = () => {
+          if (!(textInput instanceof HTMLTextAreaElement) || !(textOutput instanceof HTMLElement)) return;
+          const text = textInput.value;
+          const cjk = (text.match(/[\u4e00-\u9fff]/g) ?? []).length;
+          const words = (text.replace(/[\u4e00-\u9fff]/g, " ").match(/[A-Za-z0-9]+(?:[-'][A-Za-z0-9]+)?/g) ?? []).length;
+          const lines = text.length ? text.split(/\r\n|\r|\n/).length : 0;
+          const minutes = Math.max(1, Math.ceil((cjk / 500 + words / 220) || 0.1));
+          const values = [text.length, cjk, words, lines, `${minutes} 分钟`];
+          textOutput.querySelectorAll("strong").forEach((item, index) => {
+            item.textContent = String(values[index] ?? 0);
+          });
+        };
+        textInput?.addEventListener("input", updateTextStats);
+        updateTextStats();
+
+        const regexPattern = stage.querySelector("[data-regex-pattern]");
+        const regexFlags = stage.querySelector("[data-regex-flags]");
+        const regexText = stage.querySelector("[data-regex-text]");
+        const regexOutput = stage.querySelector("[data-regex-output]");
+        stage.querySelector("[data-regex-run]")?.addEventListener("click", () => {
+          if (!(regexPattern instanceof HTMLInputElement) || !(regexFlags instanceof HTMLInputElement) || !(regexText instanceof HTMLTextAreaElement) || !(regexOutput instanceof HTMLOutputElement)) return;
+          try {
+            const flags = regexFlags.value.includes("g") ? regexFlags.value : `${regexFlags.value}g`;
+            const regexp = new RegExp(regexPattern.value, flags);
+            const matches = Array.from(regexText.value.matchAll(regexp));
+            regexOutput.value = `匹配 ${matches.length} 项：${matches.slice(0, 6).map((match) => match[0]).join(" / ") || "无"}`;
+            regexOutput.dataset.state = "ok";
+          } catch (error) {
+            regexOutput.value = error instanceof Error ? error.message : "正则表达式错误";
+            regexOutput.dataset.state = "error";
+          }
+        });
+
+        stage.querySelectorAll("[data-copy-target]").forEach((button) => {
+          button.addEventListener("click", async () => {
+            if (!(button instanceof HTMLElement)) return;
+            const target = stage.querySelector(button.dataset.copyTarget ?? "");
+            const value = target instanceof HTMLTextAreaElement || target instanceof HTMLInputElement || target instanceof HTMLOutputElement ? target.value : target?.textContent ?? "";
+            if (!value) return;
+            await navigator.clipboard?.writeText(value);
+            button.textContent = "已复制";
+            window.setTimeout(() => {
+              button.textContent = "复制";
+            }, 1200);
+          });
+        });
+
+        const hashId = decodeURIComponent(location.hash.replace("#", ""));
+        if (hashId && cards.some((card) => card instanceof HTMLElement && card.dataset.toolId === hashId)) {
+          openTool(hashId, false);
+          requestAnimationFrame(() => scrollToToolIndex(true));
+        } else if (hashId === "tool-index") {
+          openTool(cards[0] instanceof HTMLElement ? cards[0].dataset.toolId ?? "json" : "json", false);
+          requestAnimationFrame(() => scrollToToolIndex(true));
+        } else {
+          openTool(cards[0] instanceof HTMLElement ? cards[0].dataset.toolId ?? "json" : "json", false);
+        }
+      }
+
+      initTools();
+      document.addEventListener("astro:page-load", initTools);
+    </script>
   </div>
 </BaseLayout>
-
-<script>
-  const jsonInput = document.querySelector("[data-json-input]");
-  document.querySelector("[data-json-format]")?.addEventListener("click", () => {
-    if (!(jsonInput instanceof HTMLTextAreaElement)) return;
-    try {
-      jsonInput.value = JSON.stringify(JSON.parse(jsonInput.value), null, 2);
-    } catch {
-      jsonInput.value = "JSON 解析失败，请检查格式。";
-    }
-  });
-  document.querySelector("[data-json-minify]")?.addEventListener("click", () => {
-    if (!(jsonInput instanceof HTMLTextAreaElement)) return;
-    try {
-      jsonInput.value = JSON.stringify(JSON.parse(jsonInput.value));
-    } catch {
-      jsonInput.value = "JSON 解析失败，请检查格式。";
-    }
-  });
-
-  const tsInput = document.querySelector("[data-ts-input]");
-  const tsOutput = document.querySelector("[data-ts-output]");
-  document.querySelector("[data-ts-convert]")?.addEventListener("click", () => {
-    if (!(tsInput instanceof HTMLInputElement) || !tsOutput) return;
-    const raw = Number(tsInput.value.trim());
-    const time = raw > 9999999999 ? raw : raw * 1000;
-    tsOutput.textContent = Number.isFinite(time) ? new Date(time).toLocaleString("zh-CN") : "请输入有效时间戳";
-  });
-
-  const base64Input = document.querySelector("[data-base64-input]");
-  document.querySelector("[data-base64-encode]")?.addEventListener("click", () => {
-    if (!(base64Input instanceof HTMLTextAreaElement)) return;
-    base64Input.value = btoa(unescape(encodeURIComponent(base64Input.value)));
-  });
-  document.querySelector("[data-base64-decode]")?.addEventListener("click", () => {
-    if (!(base64Input instanceof HTMLTextAreaElement)) return;
-    try {
-      base64Input.value = decodeURIComponent(escape(atob(base64Input.value)));
-    } catch {
-      base64Input.value = "Base64 解码失败，请检查输入。";
-    }
-  });
-</script>
 
 <style>
   .page {
@@ -114,107 +521,484 @@ const categories = Array.from(new Set(tools.map((item) => item.category)));
     gap: 24px;
   }
 
-  .page-hero,
-  .tool-panel {
-    padding: 34px;
+  .compact-intro {
+    align-items: end;
   }
 
-  h1 {
-    margin: 10px 0;
-    font-size: clamp(2.3rem, 6vw, 4rem);
+  .intro-note strong {
+    color: var(--blue);
+    font-size: 1.55rem;
+    line-height: 1;
   }
 
-  .page-hero p:last-child {
+  .intro-note span {
+    color: var(--muted);
+    font-size: 0.82rem;
+  }
+
+  .tool-index {
+    display: grid;
+    gap: 18px;
+    border-top: 2px solid var(--ink);
+    padding-top: 16px;
+  }
+
+  .tool-index-head {
+    display: grid;
+    grid-template-columns: minmax(240px, 1fr) auto;
+    gap: 18px;
+    align-items: end;
+  }
+
+  .tool-index-head h2 {
     margin: 0;
+    font-size: 1.25rem;
+  }
+
+  .tool-index-head p {
+    margin: 5px 0 0;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+
+  .filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: end;
+    gap: 8px;
+  }
+
+  .filter-button {
+    border: 1px solid var(--tag-border);
+    border-radius: 6px;
+    background: var(--tag-bg);
+    color: var(--tag-text);
+    padding: 6px 10px;
+    font-size: 0.82rem;
+    font-weight: 900;
+    cursor: pointer;
+  }
+
+  .filter-button.is-active {
+    border-color: var(--blue);
+    background: var(--blue);
+    color: var(--on-accent);
+  }
+
+  .tool-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .tool-card {
+    position: relative;
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: 10px;
+    min-height: 86px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    padding: 12px;
+    box-shadow: 0 8px 18px var(--shadow-soft);
+    transition:
+      background 180ms ease-out,
+      border-color 180ms ease-out,
+      transform 180ms ease-out;
+  }
+
+  .tool-card::after {
+    position: absolute;
+    right: 12px;
+    bottom: 8px;
+    left: 12px;
+    height: 2px;
+    background: var(--orange);
+    content: "";
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .tool-card:hover,
+  .tool-card.is-active {
+    border-color: var(--line-blue);
+    background: var(--surface-soft);
+  }
+
+  .tool-card.is-active::after {
+    transform: scaleX(1);
+  }
+
+  .tool-card[hidden] {
+    display: none;
+  }
+
+  .tool-icon {
+    display: grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    border: 1px solid var(--tag-border);
+    border-radius: 6px;
+    background: var(--blue-soft);
+    color: var(--blue);
+  }
+
+  .tool-copy,
+  .tool-title,
+  .tool-copy strong,
+  .tool-copy em {
+    display: block;
+    min-width: 0;
+    font-style: normal;
+  }
+
+  .tool-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .tool-title strong {
+    overflow: hidden;
+    color: var(--ink);
+    font-size: 0.96rem;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .tool-title small {
+    flex: 0 0 auto;
+    border-radius: 999px;
+    background: var(--orange-soft);
+    padding: 1px 7px;
+    color: var(--orange);
+    font-size: 0.68rem;
+    font-weight: 900;
+  }
+
+  .tool-card.is-draft .tool-title small {
+    background: var(--shadow-pop);
     color: var(--muted);
   }
 
-  .tag-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
+  .tool-copy em {
+    display: -webkit-box;
+    overflow: hidden;
+    margin-top: 5px;
+    color: var(--muted);
+    font-size: 0.8rem;
+    line-height: 1.45;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
   }
 
-  .tag.active {
-    background: #173142;
-    color: #fffaf0;
+  .empty-state {
+    margin: 0;
+    border-left: 3px solid var(--orange);
+    padding-left: 10px;
+    color: var(--muted);
   }
 
-  .tool-panels {
+  .tool-stage {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 18px;
+    overflow: hidden;
+    border-top: 1px solid var(--border-soft);
+    padding-top: 4px;
   }
 
-  .tool-panel h2 {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin: 0 0 14px;
-    font-size: 1.15rem;
+  .tool-panel {
+    grid-column: 1;
+    grid-row: 1;
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-12px);
+    transition:
+      max-height 420ms cubic-bezier(0.2, 0.8, 0.2, 1),
+      opacity 240ms ease-out,
+      transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
   }
 
-  textarea,
-  input {
+  .tool-panel.is-active {
+    max-height: 920px;
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+
+  .tool-panel-head {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr);
+    gap: 11px;
+    align-items: start;
+    margin: 16px 0 14px;
+  }
+
+  .tool-panel-head > span {
+    display: grid;
+    width: 36px;
+    height: 36px;
+    place-items: center;
+    border-radius: 6px;
+    background: var(--ink);
+    color: var(--on-accent);
+  }
+
+  .tool-panel-head h2 {
+    margin: 0;
+    font-size: 1.25rem;
+  }
+
+  .tool-panel-head p {
+    margin: 4px 0 0;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+
+  .workspace {
+    border-top: 1px solid var(--border-soft);
+    padding: 16px 0 22px;
+  }
+
+  .two-column {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 0.36fr);
+    gap: 16px;
+    align-items: start;
+  }
+
+  .split-line {
+    display: grid;
+    grid-template-columns: minmax(220px, 0.5fr) minmax(0, 1fr) auto;
+    gap: 14px;
+    align-items: end;
+  }
+
+  .regex-grid {
+    display: grid;
+    grid-template-columns: 1fr 140px;
+    gap: 14px;
+  }
+
+  .regex-grid textarea,
+  .regex-grid output,
+  .regex-grid .panel-actions {
+    grid-column: 1 / -1;
+  }
+
+  label {
+    display: grid;
+    gap: 6px;
+    color: var(--muted);
+    font-size: 0.78rem;
+    font-weight: 900;
+  }
+
+  :global(.tool-control) {
     width: 100%;
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    background: #fffdf8;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface-strong);
     color: var(--ink);
     padding: 12px;
     outline: none;
+    box-shadow: inset 0 1px 0 var(--tape-shadow);
   }
 
-  textarea {
-    min-height: 150px;
+  :global(.tool-control:focus) {
+    border-color: var(--line-blue);
+    box-shadow: 0 0 0 3px var(--focus-ring);
+  }
+
+  :global(.tool-textarea) {
+    min-height: 220px;
     resize: vertical;
+  }
+
+  :global(.tool-textarea.compact) {
+    min-height: 126px;
+  }
+
+  :global(.code-text) {
+    font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+    font-size: 0.92rem;
+    line-height: 1.62;
+  }
+
+  .tool-aside {
+    display: grid;
+    gap: 12px;
   }
 
   .panel-actions {
     display: flex;
+    flex-wrap: wrap;
     gap: 10px;
-    margin-top: 12px;
   }
 
-  button {
-    border: 1px solid #e1cfae;
-    border-radius: 10px;
-    background: var(--accent-soft);
-    padding: 8px 12px;
-    color: #6b2e05;
+  :global(.tool-button) {
+    border: 1px solid var(--tag-border);
+    border-radius: 6px;
+    background: var(--orange-soft);
+    padding: 7px 11px;
+    color: var(--orange);
+    font-weight: 900;
+    cursor: pointer;
+    transition:
+      transform 160ms ease-out,
+      border-color 160ms ease-out,
+      background 160ms ease-out;
+  }
+
+  :global(.tool-button.primary) {
+    border-color: var(--line-blue);
+    background: var(--blue);
+    color: var(--on-accent);
+  }
+
+  :global(.tool-button:active) {
+    transform: translateY(1px);
+  }
+
+  .tool-status,
+  .tool-result {
+    display: block;
+    min-height: 42px;
+    margin: 0;
+    border-left: 3px solid var(--border);
+    padding: 8px 0 0 10px;
+    color: var(--muted);
+    font-size: 0.86rem;
+    line-height: 1.6;
+  }
+
+  .tool-result,
+  .hash-output {
+    overflow-wrap: anywhere;
+    color: var(--ink);
+    font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+    font-weight: 800;
+  }
+
+  .tool-status[data-state="ok"],
+  .tool-result[data-state="ok"] {
+    border-left-color: var(--blue);
+    color: var(--blue);
+  }
+
+  .tool-status[data-state="error"],
+  .tool-result[data-state="error"] {
+    border-left-color: var(--orange);
+    color: var(--status-error);
+  }
+
+  .stat-board {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .stat-board span {
+    border-bottom: 1px solid var(--border-soft);
+    padding: 8px 0;
+    color: var(--muted);
+    font-size: 0.82rem;
     font-weight: 900;
   }
 
-  [data-ts-output] {
-    min-height: 32px;
-    color: var(--muted);
+  .stat-board strong {
+    display: block;
+    margin-top: 3px;
+    color: var(--ink);
+    font-size: 1.25rem;
   }
 
   .swatches {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 12px;
+    border-top: 1px solid var(--border-soft);
+    padding: 16px 0 22px;
   }
 
   .swatches span {
     display: grid;
-    min-height: 90px;
+    min-height: 100px;
     align-items: end;
-    border: 1px solid var(--line);
-    border-radius: 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
     background: var(--swatch);
-    color: #fff;
+    color: var(--swatch-text);
     padding: 10px;
     font-weight: 900;
+  }
+
+  .swatches small {
+    font-size: 0.72rem;
+    opacity: 0.72;
   }
 
   .swatches span:first-child {
     color: var(--ink);
   }
 
-  @media (max-width: 760px) {
-    .tool-panels,
-    .swatches {
+  .placeholder-panel {
+    display: grid;
+    gap: 10px;
+    border: 1px dashed var(--border-strong);
+    border-radius: 8px;
+    padding: 18px;
+  }
+
+  .placeholder-panel span {
+    display: block;
+    height: 12px;
+    border-radius: 999px;
+    background: var(--blue-soft);
+  }
+
+  .placeholder-panel span:nth-child(2) {
+    width: 74%;
+  }
+
+  .placeholder-panel span:nth-child(3) {
+    width: 46%;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tool-panel,
+    .tool-card::after {
+      transition: none;
+    }
+  }
+
+  @media (max-width: 980px) {
+    .tool-index-head,
+    .two-column,
+    .split-line {
+      grid-template-columns: 1fr;
+    }
+
+    .filter-row {
+      justify-content: start;
+    }
+
+    .tool-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 620px) {
+    .tool-grid,
+    .regex-grid,
+    .swatches,
+    .stat-board {
       grid-template-columns: 1fr;
     }
   }

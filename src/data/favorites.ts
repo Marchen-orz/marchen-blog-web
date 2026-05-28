@@ -1,7 +1,7 @@
 export const favorites = [
   {
     title: "Astro Docs",
-    description: "Astro 官方文档，查组件、路由、内容集合。",
+    description: "Astro 官方文档，查组件、路由、内容集合都很顺手",
     url: "https://docs.astro.build/",
     category: "技术文档",
     icon: "Rocket",
@@ -9,7 +9,7 @@ export const favorites = [
   },
   {
     title: "MDN Web Docs",
-    description: "Web API、HTML、CSS、JavaScript 的长期参考。",
+    description: "Web API、HTML、CSS、JavaScript 的长期参考书架",
     url: "https://developer.mozilla.org/",
     category: "技术文档",
     icon: "BookOpen",
@@ -17,7 +17,7 @@ export const favorites = [
   },
   {
     title: "React 文档",
-    description: "React 官方学习和 API 文档。",
+    description: "React 官方学习和 API 文档，查起来最安心",
     url: "https://react.dev/",
     category: "技术文档",
     icon: "Atom",
@@ -25,7 +25,7 @@ export const favorites = [
   },
   {
     title: "Excalidraw",
-    description: "快速画手绘风架构图和草图。",
+    description: "快速画手绘风架构图和草图，脑图救急很好用",
     url: "https://excalidraw.com/",
     category: "设计工具",
     icon: "PencilRuler",
@@ -33,7 +33,7 @@ export const favorites = [
   },
   {
     title: "Vercel",
-    description: "个人项目部署、预览和服务端函数。",
+    description: "个人项目部署、预览和服务端函数，点几下就上线",
     url: "https://vercel.com/",
     category: "部署服务",
     icon: "Triangle",
@@ -41,7 +41,7 @@ export const favorites = [
   },
   {
     title: "GitHub",
-    description: "代码仓库、Issues、Discussions 和开源协作。",
+    description: "代码仓库、Issues、Discussions 和开源协作基地",
     url: "https://github.com/",
     category: "开发工具",
     icon: "Github",

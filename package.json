@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "astro dev",
+    "dev": "astro dev --host",
     "build": "astro build && pagefind --site dist",
     "preview": "astro preview",
     "astro": "astro",
@@ -16,9 +16,12 @@
     "@astrojs/rss": "^4.0.12",
     "@astrojs/sitemap": "^3.6.0",
     "@astrojs/vercel": "^10.0.6",
+    "@fontsource/caveat": "5.2.8",
     "@lucide/astro": "^1.14.0",
     "@tailwindcss/vite": "^4.3.0",
+    "aplayer": "1.10.1",
     "astro": "^6.3.1",
+    "meting": "2.0.2",
     "pagefind": "^1.5.2",
     "tailwindcss": "^4.3.0"
   },
