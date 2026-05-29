@@ -2,7 +2,7 @@ import type { APIRoute } from "astro";
 
 export const prerender = false;
 
-const METING_ENDPOINT = "https://api.i-meto.com/meting/api";
+const METING_ENDPOINT = "https://api.injahow.cn/meting/";
 const allowedServers = new Set(["netease", "tencent", "kugou", "kuwo", "baidu"]);
 const allowedTypes = new Set(["song", "playlist", "album", "artist", "search"]);
 

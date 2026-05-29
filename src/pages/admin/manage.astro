@@ -710,7 +710,7 @@ if (!canManage) {
                     });
                     const result = await response.json();
                     if (!response.ok || !result?.ok) throw new Error(result?.error || "保存失败");
-                    setStatus(`已提交：${result.path}`, "ok");
+                    setStatus(result.local ? `已保存到本地：${result.path}` : `已提交：${result.path}`, "ok");
                   } catch (error) {
                     setStatus(error instanceof Error ? error.message : "保存失败", "error");
                   } finally {

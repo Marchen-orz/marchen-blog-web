@@ -1,5 +1,7 @@
 import type { APIRoute } from "astro";
 import { Buffer } from "node:buffer";
+import { writeFile } from "node:fs/promises";
+import path from "node:path";
 import { hasPrivateAccess } from "@/lib/private-access";
 
 export const prerender = false;
@@ -60,10 +62,14 @@ function json(data: unknown, status = 200) {
   });
 }
 
-function ensureGithubConfig() {
-  const missing = Object.entries(githubConfig)
+function getMissingGithubConfig() {
+  return Object.entries(githubConfig)
     .filter(([key, value]) => key !== "branch" && !value)
     .map(([key]) => `GITHUB_${key.toUpperCase()}`);
+}
+
+function ensureGithubConfig() {
+  const missing = getMissingGithubConfig();
 
   if (missing.length) throw new Error(`Missing environment variables: ${missing.join(", ")}`);
 }
@@ -145,19 +151,38 @@ async function commitFile(filePath: string, sha: string, content: string, messag
   return response.json();
 }
 
+async function writeLocalDataFile(filePath: string, content: string) {
+  const root = path.resolve(process.cwd());
+  const target = path.resolve(root, filePath);
+  if (target !== root && !target.startsWith(`${root}${path.sep}`)) {
+    throw new Error(`Invalid local file path: ${filePath}`);
+  }
+  await writeFile(target, content, "utf8");
+}
+
 export const POST: APIRoute = async ({ cookies, request }) => {
   if (!hasPrivateAccess(cookies)) return json({ error: "Unauthorized." }, 401);
 
   try {
-    ensureGithubConfig();
     const payload = (await request.json()) as ManagePayload;
     const kind = payload.kind;
     if (kind !== "projects" && kind !== "tools" && kind !== "favorites") throw new Error("Invalid manage kind.");
     if (!Array.isArray(payload.items)) throw new Error("Items must be an array.");
 
     const target = targets[kind];
-    const current = await getExistingFile(target.path);
     const content = serializeDataFile(kind, payload.items);
+    const missingGithubConfig = getMissingGithubConfig();
+    if (missingGithubConfig.length && import.meta.env.DEV) {
+      await writeLocalDataFile(target.path, content);
+      return json({
+        ok: true,
+        path: target.path,
+        local: true,
+      });
+    }
+
+    ensureGithubConfig();
+    const current = await getExistingFile(target.path);
     const result = await commitFile(target.path, current.sha, content, `content(${target.commitScope}): update order`);
 
     return json({

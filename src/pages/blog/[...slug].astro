@@ -46,7 +46,7 @@ const readingMinutes = getReadingMinutes(post.body);
         {post.data.cover && <img class="cover" src="/images/image-placeholder.svg" data-media-src={post.data.cover} alt="" />}
       </header>
 
-      <section class="prose article-content">
+      <section class="prose article-content" data-article-content>
         <Content />
       </section>
 
@@ -90,8 +90,10 @@ const readingMinutes = getReadingMinutes(post.body);
 
       <section class="side-note progress-note">
         <h2>阅读进度</h2>
-        <span class="progress"><i style={`width:${Math.min(100, readingMinutes * 9)}%`}></i></span>
-        <p>预计 {readingMinutes} 分钟读完</p>
+        <span class="progress" role="progressbar" aria-label="阅读进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" data-reading-progress-track>
+          <i data-reading-progress style="width:0%"></i>
+        </span>
+        <p><span data-reading-progress-text>0%</span> / 预计 {readingMinutes} 分钟读完</p>
       </section>
 
       <section class="side-note">
@@ -102,6 +104,52 @@ const readingMinutes = getReadingMinutes(post.body);
       </section>
     </aside>
   </article>
+
+  <script>
+    let cleanupReadingProgress = () => {};
+
+    function initReadingProgress() {
+      cleanupReadingProgress();
+      const article = document.querySelector("[data-article-content]");
+      const bar = document.querySelector("[data-reading-progress]");
+      const track = document.querySelector("[data-reading-progress-track]");
+      const label = document.querySelector("[data-reading-progress-text]");
+      if (!(article instanceof HTMLElement) || !(bar instanceof HTMLElement)) return;
+
+      let ticking = false;
+      const update = () => {
+        const rect = article.getBoundingClientRect();
+        const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+        const articleTop = rect.top + window.scrollY;
+        const articleHeight = article.offsetHeight;
+        const scrollStart = articleTop;
+        const scrollEnd = Math.max(scrollStart + 1, articleTop + articleHeight - viewportHeight);
+        const progress = Math.min(100, Math.max(0, ((window.scrollY - scrollStart) / (scrollEnd - scrollStart)) * 100));
+        const rounded = Math.round(progress);
+        bar.style.width = `${progress}%`;
+        if (track instanceof HTMLElement) track.setAttribute("aria-valuenow", String(rounded));
+        if (label instanceof HTMLElement) label.textContent = `${rounded}%`;
+        ticking = false;
+      };
+      const requestUpdate = () => {
+        if (ticking) return;
+        ticking = true;
+        window.requestAnimationFrame(update);
+      };
+
+      const controller = new AbortController();
+      update();
+      window.addEventListener("scroll", requestUpdate, { passive: true, signal: controller.signal });
+      window.addEventListener("resize", requestUpdate, { signal: controller.signal });
+      cleanupReadingProgress = () => controller.abort();
+      document.addEventListener("astro:before-swap", () => {
+        cleanupReadingProgress();
+      }, { once: true });
+    }
+
+    initReadingProgress();
+    document.addEventListener("astro:page-load", initReadingProgress);
+  </script>
 </BaseLayout>
 
 <style>
@@ -250,18 +298,6 @@ const readingMinutes = getReadingMinutes(post.body);
     height: 100%;
     border-radius: inherit;
     background: var(--blue);
-    animation: progress-in 680ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
-  }
-
-  @keyframes progress-in {
-    from {
-      transform: scaleX(0);
-      transform-origin: left center;
-    }
-    to {
-      transform: scaleX(1);
-      transform-origin: left center;
-    }
   }
 
   .continue {
