@@ -18,6 +18,20 @@ const allPosts = (await getCollection("blog"))
 const currentIndex = allPosts.findIndex((entry) => entry.id === post.id);
 const nextPosts = allPosts.filter((entry) => entry.id !== post.id).slice(0, 3);
 const readingMinutes = getReadingMinutes(post.body);
+const tocTree: Array<{ slug: string; text: string; children: Array<{ slug: string; text: string }> }> = [];
+let currentTocParent: (typeof tocTree)[number] | undefined;
+
+headings
+  .filter((heading) => heading.depth === 2 || heading.depth === 3)
+  .forEach((heading) => {
+    if (heading.depth === 2 || !currentTocParent) {
+      currentTocParent = { slug: heading.slug, text: heading.text, children: [] };
+      tocTree.push(currentTocParent);
+      return;
+    }
+
+    currentTocParent.children.push({ slug: heading.slug, text: heading.text });
+  });
 ---
 
 <BaseLayout title={post.data.title} description={post.data.description}>
@@ -77,10 +91,21 @@ const readingMinutes = getReadingMinutes(post.body);
     <aside class="article-sidebar">
       <nav class="toc" aria-label="文章目录">
         <h2>文章目录</h2>
-        {headings.length > 0 ? (
-          <ol>
-            {headings.filter((heading) => heading.depth <= 3).map((heading) => (
-              <li><a href={`#${heading.slug}`}>{heading.text}</a></li>
+        {tocTree.length > 0 ? (
+          <ol class="toc-list" data-article-toc>
+            {tocTree.map((heading) => (
+              <li class="toc-item depth-2" data-toc-parent data-toc-item data-toc-slug={heading.slug}>
+                <a href={`#${heading.slug}`} data-toc-link data-toc-depth="2">{heading.text}</a>
+                {heading.children.length > 0 && (
+                  <ol class="toc-sublist">
+                    {heading.children.map((child) => (
+                      <li class="toc-item depth-3" data-toc-item data-toc-slug={child.slug}>
+                        <a href={`#${child.slug}`} data-toc-link data-toc-depth="3">{child.text}</a>
+                      </li>
+                    ))}
+                  </ol>
+                )}
+              </li>
             ))}
           </ol>
         ) : (
@@ -107,6 +132,7 @@ const readingMinutes = getReadingMinutes(post.body);
 
   <script>
     let cleanupReadingProgress = () => {};
+    let cleanupArticleToc = () => {};
 
     function initReadingProgress() {
       cleanupReadingProgress();
@@ -147,8 +173,83 @@ const readingMinutes = getReadingMinutes(post.body);
       }, { once: true });
     }
 
+    function initArticleToc() {
+      cleanupArticleToc();
+      const toc = document.querySelector("[data-article-toc]");
+      if (!(toc instanceof HTMLElement)) return;
+
+      const links = Array.from(toc.querySelectorAll("[data-toc-link]")).filter((link) => link instanceof HTMLAnchorElement);
+      const sections = links
+        .map((link) => {
+          const id = decodeURIComponent(link.hash.slice(1));
+          const section = document.getElementById(id);
+          return section instanceof HTMLElement ? { id, section } : undefined;
+        })
+        .filter((item): item is { id: string; section: HTMLElement } => Boolean(item));
+
+      const setActive = (id) => {
+        toc.querySelectorAll("[data-toc-parent]").forEach((item) => {
+          if (item instanceof HTMLElement) item.dataset.expanded = "false";
+        });
+
+        links.forEach((link) => {
+          const active = decodeURIComponent(link.hash.slice(1)) === id;
+          link.classList.toggle("active", active);
+          if (active) {
+            link.setAttribute("aria-current", "location");
+            const item = link.closest("[data-toc-item]");
+            const parent = item?.matches("[data-toc-parent]") ? item : item?.closest("[data-toc-parent]");
+            if (item instanceof HTMLElement) item.dataset.active = "true";
+            if (parent instanceof HTMLElement) parent.dataset.expanded = "true";
+          } else {
+            link.removeAttribute("aria-current");
+            link.closest("[data-toc-item]")?.removeAttribute("data-active");
+          }
+        });
+      };
+
+      let ticking = false;
+      const update = () => {
+        const offset = 120;
+        let activeId = "";
+
+        for (const item of sections) {
+          const top = item.section.getBoundingClientRect().top;
+          if (top <= offset) activeId = item.id;
+        }
+
+        if (!activeId) {
+          const next = sections.find((item) => {
+            const top = item.section.getBoundingClientRect().top;
+            return top > offset && top < window.innerHeight * 0.58;
+          });
+          activeId = next?.id ?? "";
+        }
+
+        setActive(activeId);
+        ticking = false;
+      };
+
+      const requestUpdate = () => {
+        if (ticking) return;
+        ticking = true;
+        window.requestAnimationFrame(update);
+      };
+
+      const controller = new AbortController();
+      update();
+      window.addEventListener("scroll", requestUpdate, { passive: true, signal: controller.signal });
+      window.addEventListener("resize", requestUpdate, { signal: controller.signal });
+      cleanupArticleToc = () => controller.abort();
+      document.addEventListener("astro:before-swap", () => {
+        cleanupArticleToc();
+      }, { once: true });
+    }
+
     initReadingProgress();
+    initArticleToc();
     document.addEventListener("astro:page-load", initReadingProgress);
+    document.addEventListener("astro:page-load", initArticleToc);
   </script>
 </BaseLayout>
 
@@ -263,17 +364,82 @@ const readingMinutes = getReadingMinutes(post.body);
     font-size: 1rem;
   }
 
-  .toc ol {
+  .toc-list,
+  .toc-sublist {
     display: grid;
-    gap: 8px;
     margin: 0;
-    padding-left: 20px;
+    padding: 0;
+    list-style: none;
+  }
+
+  .toc-list {
+    gap: 4px;
+  }
+
+  .toc-sublist {
+    display: none;
+    gap: 2px;
+    margin: 4px 0 2px;
+    padding-left: 14px;
+  }
+
+  .toc-item[data-expanded="true"] > .toc-sublist {
+    display: grid;
+  }
+
+  .toc-item {
+    min-width: 0;
   }
 
   .toc a {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    border-radius: 5px;
+    padding: 5px 7px 5px 12px;
     color: var(--ink-2);
     font-size: 0.88rem;
     font-weight: 800;
+    line-height: 1.45;
+    text-overflow: ellipsis;
+    transition:
+      background 180ms ease-out,
+      color 180ms ease-out,
+      padding-left 180ms ease-out;
+  }
+
+  .toc a::before {
+    position: absolute;
+    top: 50%;
+    left: 3px;
+    width: 3px;
+    height: 0;
+    border-radius: 999px;
+    background: var(--blue);
+    content: "";
+    opacity: 0;
+    transform: translateY(-50%);
+    transition:
+      height 180ms ease-out,
+      opacity 180ms ease-out;
+  }
+
+  .toc a:hover,
+  .toc a.active {
+    background: var(--blue-soft);
+    color: var(--blue);
+    padding-left: 15px;
+  }
+
+  .toc a.active::before {
+    height: 18px;
+    opacity: 1;
+  }
+
+  .toc .depth-3 a {
+    color: var(--muted);
+    font-size: 0.82rem;
+    font-weight: 750;
   }
 
   .side-note p {

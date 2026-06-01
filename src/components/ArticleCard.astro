@@ -17,11 +17,9 @@ const dateLabel = date.toLocaleDateString("zh-CN", { month: "2-digit", day: "2-d
 ---
 
 <a class:list={["article-card", { featured }]} href={href} aria-label={`阅读：${title}`}>
-  {cover && (
-    <span class="cover-link">
-      <img src="/images/image-placeholder.svg" data-media-src={cover} alt="" loading="lazy" />
-    </span>
-  )}
+  <span class="cover-link">
+    <img src="/images/image-placeholder.svg" data-media-src={cover} alt="" loading="lazy" />
+  </span>
   <div class="article-body">
     <div class="meta-line">
       <time datetime={date.toISOString()}>{dateLabel}</time>

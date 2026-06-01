@@ -90,6 +90,13 @@ svg {
   transition: none;
 }
 
+.media-shell:has(img[data-media-state="revealing"]),
+.media-shell:has(img[data-media-state="loaded"]),
+.media-shell:has(img[data-media-state="error"]),
+.media-shell:has(img[data-no-media-shell]) {
+  background: var(--surface-soft);
+}
+
 .media-shell:has(img[data-media-state="revealing"])::before,
 .media-shell:has(img[data-media-state="loaded"])::before,
 .media-shell:has(img[data-media-state="error"])::before,
@@ -99,6 +106,12 @@ svg {
 
 img {
   background: transparent;
+}
+
+.media-shell > img {
+  position: relative;
+  z-index: 2;
+  display: block;
 }
 
 img[data-media-state] {
@@ -601,40 +614,66 @@ body > footer {
 .prose {
   color: var(--ink);
   font-size: 1rem;
+  font-weight: 430;
 }
 
 .prose h2,
 .prose h3 {
   position: relative;
-  margin: 2em 0 0.7em;
+  scroll-margin-top: 104px;
+  color: var(--ink);
   line-height: 1.32;
   letter-spacing: 0;
 }
 
 .prose h2 {
-  padding-left: 16px;
-  font-size: 1.45rem;
+  margin: 2.25em 0 0.8em;
+  border-bottom: 1px solid var(--border-soft);
+  padding: 0 0 9px 18px;
+  font-size: 1.5rem;
+  font-weight: 900;
 }
 
 .prose h2::before {
   position: absolute;
   left: 0;
-  top: 0.25em;
-  width: 4px;
-  height: 1.1em;
+  top: 0.12em;
+  width: 5px;
+  height: 1.25em;
   border-radius: 999px;
   background: var(--orange);
   content: "";
 }
 
 .prose h3 {
-  font-size: 1.18rem;
+  margin: 1.65em 0 0.65em;
+  padding-left: 18px;
+  color: var(--ink-2);
+  font-size: 1.22rem;
+  font-weight: 850;
+}
+
+.prose h3::before {
+  position: absolute;
+  left: 1px;
+  top: 0.55em;
+  width: 8px;
+  height: 8px;
+  border: 2px solid var(--blue);
+  border-radius: 50%;
+  background: var(--surface);
+  content: "";
 }
 
 .prose p,
 .prose ul,
 .prose ol {
   margin: 1em 0;
+}
+
+.prose strong {
+  color: var(--ink);
+  font-weight: 850;
 }
 
 .prose a {
@@ -654,13 +693,129 @@ body > footer {
 
 .prose pre {
   overflow-x: auto;
+  overflow-y: auto;
+  max-height: min(70vh, 680px);
   padding: 16px;
   border: 1px solid var(--code-block-border);
   border-radius: 7px;
   background: var(--code-block-bg);
   color: var(--code-block-text);
   font-size: 0.9rem;
+  font-weight: 500;
   line-height: 1.65;
+  scrollbar-color: color-mix(in srgb, var(--blue) 62%, var(--border-strong)) transparent;
+  scrollbar-width: thin;
+}
+
+.prose pre::-webkit-scrollbar,
+.prose table::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.prose pre::-webkit-scrollbar-track,
+.prose table::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: transparent;
+}
+
+.prose pre::-webkit-scrollbar-thumb,
+.prose table::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--blue) 58%, var(--border-strong));
+  background-clip: padding-box;
+}
+
+.prose pre::-webkit-scrollbar-thumb:hover,
+.prose table::-webkit-scrollbar-thumb:hover {
+  background: var(--blue);
+  background-clip: padding-box;
+}
+
+.prose table {
+  display: block;
+  overflow-x: auto;
+  width: max-content;
+  max-width: 100%;
+  margin: 1.35em 0;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  border-spacing: 0;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 0.92rem;
+  line-height: 1.55;
+  margin-right: auto;
+  margin-left: auto;
+  scrollbar-color: color-mix(in srgb, var(--blue) 62%, var(--border-strong)) transparent;
+  scrollbar-width: thin;
+}
+
+.prose thead {
+  background: var(--blue-soft);
+}
+
+.prose th,
+.prose td {
+  border-right: 1px solid var(--border-soft);
+  border-bottom: 1px solid var(--border-soft);
+  padding: 10px 12px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.prose th {
+  color: var(--ink);
+  font-weight: 850;
+}
+
+.prose td {
+  color: var(--ink-2);
+  font-weight: 430;
+}
+
+.prose tr:nth-child(even) td {
+  background: color-mix(in srgb, var(--surface-soft) 72%, transparent);
+}
+
+.prose th:last-child,
+.prose td:last-child {
+  border-right: 0;
+}
+
+.prose tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.prose .media-shell {
+  width: 100%;
+  margin: 1.35em auto;
+  border-radius: 7px;
+  background: transparent;
+}
+
+.prose .media-shell::before {
+  border-radius: inherit;
+  background:
+    center / contain no-repeat url("/images/image-placeholder.svg"),
+    transparent;
+}
+
+.prose .media-shell:has(img[data-media-state="revealing"]),
+.prose .media-shell:has(img[data-media-state="loaded"]),
+.prose .media-shell:has(img[data-media-state="error"]),
+.prose .media-shell:has(img[data-no-media-shell]) {
+  background: transparent;
+}
+
+.prose .media-shell > img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  margin: 0 auto;
+  border-radius: inherit;
 }
 
 .prose code {

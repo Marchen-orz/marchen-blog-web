@@ -16,8 +16,6 @@ visibility: "public"
 
 Agent Loop 的核心实现逻辑抽象后其实不到 20 行代码：
 
-Copy
-
 ```ts
 const messages: MessageParam[] = [{ role: "user", content: userInput }];
 
@@ -140,7 +138,6 @@ LLM 推理时，Transformer attention 会为每个 token 计算 Key-Value 对，
 
 Skills 是上下文工程里非常有效的一种模式，核心思路是：**系统提示只保留索引，完整知识按需加载**。
 
-Copy
 
 ```ts
 const systemPrompt = `
@@ -176,8 +173,6 @@ Skills **不能等 Agent 想起来再用，要每轮都先扫描描述**，但�
 压缩阶段最常见的问题，不是摘要不够短，而是保留顺序设错了
 
 最好在 `CLAUDE.md` 或等价文档里明确写出压缩时的保留优先级：
-
-Copy
 
 ```markdown
 ### Compact Instructions 如何保留关键信息
