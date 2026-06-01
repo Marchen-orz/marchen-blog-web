@@ -27,6 +27,8 @@ const playlistUrl = music.metingApi
         --surface: rgba(255, 255, 255, 0.92);
         --orange: #ff7a2f;
         --orange-soft: #fff0dc;
+        --player-body-height: 84px;
+        --player-list-height: 168px;
       }
 
       * {
@@ -56,7 +58,7 @@ const playlistUrl = music.metingApi
       .frame-empty,
       #player {
         width: 100%;
-        height: 100%;
+        min-height: 100%;
       }
 
       .frame-empty {
@@ -76,7 +78,8 @@ const playlistUrl = music.metingApi
 
       .aplayer {
         width: 100% !important;
-        height: 100%;
+        min-height: var(--player-body-height);
+        height: auto;
         margin: 0;
         border-radius: 7px;
         background: transparent;
@@ -90,7 +93,7 @@ const playlistUrl = music.metingApi
         position: relative;
         display: block;
         width: 100%;
-        height: 100%;
+        height: var(--player-body-height);
         min-height: 0;
         background: transparent;
         overflow: hidden;
@@ -165,13 +168,18 @@ const playlistUrl = music.metingApi
       }
 
       .aplayer .aplayer-lrc {
-        display: block;
-        width: min(360px, calc(100% - 12px));
+        position: absolute;
+        top: 34px;
+        right: 8px;
+        left: 94px;
+        z-index: 2;
+        display: block !important;
+        width: auto !important;
         height: 24px;
-        margin: 0;
-        clear: both;
+        margin: 0 !important;
+        clear: none;
         overflow: hidden;
-        text-align: left;
+        text-align: left !important;
       }
 
       .aplayer .aplayer-lrc::before,
@@ -179,11 +187,19 @@ const playlistUrl = music.metingApi
         display: none;
       }
 
+      .aplayer .aplayer-lrc .aplayer-lrc-contents,
       .aplayer .aplayer-lrc p {
+        width: 100% !important;
+        margin-right: auto !important;
+        margin-left: 0 !important;
+        text-align: left !important;
+      }
+
+      .aplayer .aplayer-lrc p {
+        display: block;
         color: var(--muted);
         font-size: 12px;
         line-height: 16px !important;
-        text-align: left !important;
         text-overflow: ellipsis;
         white-space: nowrap;
       }
@@ -195,6 +211,9 @@ const playlistUrl = music.metingApi
 
       .aplayer .aplayer-lrc .marchen-lrc-empty {
         display: none;
+        position: absolute;
+        top: 0;
+        left: 0;
         opacity: 1;
       }
 
@@ -207,7 +226,56 @@ const playlistUrl = music.metingApi
       }
 
       .aplayer .aplayer-list {
-        display: none !important;
+        display: block !important;
+        max-height: var(--player-list-height);
+        border-top: 1px solid var(--border-soft);
+        background: rgba(255, 255, 255, 0.68);
+        overflow: hidden;
+        transition: max-height 220ms ease-out, border-color 220ms ease-out;
+      }
+
+      .aplayer .aplayer-list.aplayer-list-hide {
+        max-height: 0 !important;
+        border-top-color: transparent;
+      }
+
+      .aplayer .aplayer-list ol {
+        max-height: var(--player-list-height);
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255, 122, 47, 0.45) transparent;
+      }
+
+      .aplayer .aplayer-list ol::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      .aplayer .aplayer-list ol::-webkit-scrollbar-track {
+        background: transparent;
+      }
+
+      .aplayer .aplayer-list ol::-webkit-scrollbar-thumb {
+        border: 2px solid transparent;
+        border-radius: 999px;
+        background: rgba(255, 122, 47, 0.45);
+        background-clip: content-box;
+      }
+
+      .aplayer .aplayer-list ol li {
+        height: 32px;
+        border-top: 1px solid var(--border-soft);
+        color: var(--ink);
+        line-height: 32px;
+      }
+
+      .aplayer .aplayer-list ol li:hover,
+      .aplayer .aplayer-list ol li.aplayer-list-light {
+        background: var(--orange-soft);
+      }
+
+      .aplayer .aplayer-list ol li .aplayer-list-index,
+      .aplayer .aplayer-list ol li .aplayer-list-author {
+        color: var(--muted);
       }
 
       .aplayer .aplayer-notice {
@@ -216,6 +284,10 @@ const playlistUrl = music.metingApi
       }
 
       @media (max-width: 760px) {
+        :root {
+          --player-body-height: 76px;
+        }
+
         .aplayer .aplayer-pic,
         .aplayer.aplayer-withlrc .aplayer-pic {
           width: 76px !important;
@@ -230,8 +302,10 @@ const playlistUrl = music.metingApi
         }
 
         .aplayer .aplayer-lrc {
+          top: 32px;
+          right: 7px;
+          left: 86px;
           height: 20px;
-          width: min(260px, calc(100% - 10px));
         }
       }
     </style>
@@ -281,6 +355,24 @@ const playlistUrl = music.metingApi
           lrc.classList.toggle("is-empty", !hasText);
         };
 
+        const postPlaylistState = () => {
+          const list = playerHost.querySelector(".aplayer-list");
+          const expanded = list instanceof HTMLElement && !list.classList.contains("aplayer-list-hide");
+
+          body.dataset.playlistExpanded = expanded ? "true" : "false";
+          window.parent?.postMessage(
+            {
+              type: "marchen-music-playlist",
+              expanded,
+            },
+            window.location.origin
+          );
+        };
+
+        const syncPlaylistStateSoon = () => {
+          window.requestAnimationFrame(postPlaylistState);
+        };
+
         fetch(body.dataset.playlistUrl, { credentials: "same-origin" })
           .then((response) => (response.ok ? response.json() : []))
           .then((items) => {
@@ -301,6 +393,12 @@ const playlistUrl = music.metingApi
               preload: "metadata",
               theme: "#ff7a2f",
             });
+
+            player.on("listshow", syncPlaylistStateSoon);
+            player.on("listhide", syncPlaylistStateSoon);
+            player.list?.hide?.();
+            postPlaylistState();
+            window.setTimeout(postPlaylistState, 80);
 
             const tryPlay = () => {
               player.audio?.play?.().catch(() => {});
