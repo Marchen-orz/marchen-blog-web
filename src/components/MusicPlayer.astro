@@ -5,88 +5,58 @@ import { siteConfig } from "@/data/site";
 const hasPlaylist = Boolean(siteConfig.music.playlistId && !siteConfig.music.playlistId.startsWith("YOUR_"));
 ---
 
-<aside class="music-bar is-collapsed" aria-label="音乐播放器" data-music-player transition:persist="marchen-music-player">
+<aside class="music-bar is-collapsed" aria-label="音乐播放器" data-music-player transition:persist="marchen-music-player" transition:animate="none">
   <button class="music-tab" type="button" aria-label="展开或折叠音乐播放器" data-music-toggle>
     <Icon name="Music2" size={17} />
   </button>
 
-  <section class="music-panel">
+  <section class="music-panel" aria-label="音乐播放面板">
     <div class="music-shell">
       <div class="music-label" data-music-drag-handle>
         <span>Now Playing</span>
         <strong>{hasPlaylist ? "Marchen Playlist" : "等待配置歌单"}</strong>
       </div>
-      <div class="meting-host">
-        {hasPlaylist ? (
-          <meting-js
-            server="tencent"
-            type="playlist"
-            id={siteConfig.music.playlistId}
-            api={siteConfig.music.metingApi}
-            fixed="false"
-            mini="false"
-            autoplay="false"
-            theme="var(--orange)"
-            loop="all"
-            order="list"
-            preload="metadata"
-            list-folded="true"
-            list-max-height="180px"
-            mutex="true"
-          />
-        ) : (
-          <div class="music-empty">
-            <Icon name="ListMusic" size={22} />
-            <span>
-              <strong>播放器已就绪</strong>
-              <em>在 <code>src/data/site.ts</code> 填入 QQ 音乐歌单 ID 后会自动加载</em>
-            </span>
-          </div>
-        )}
-      </div>
+      <iframe class="music-frame" src="/music-player-frame" title="Marchen Playlist" loading="eager" data-music-frame></iframe>
     </div>
   </section>
 </aside>
 
-<script define:vars={{ musicConfig: siteConfig.music, hasPlaylist }}>
-  const player = document.querySelector("[data-music-player]");
+<script>
+  function initMarchenMusicPlayer() {
+    const player = document.querySelector("[data-music-player]");
+    if (!(player instanceof HTMLElement) || player.dataset.initialized === "true") return;
 
-  if (player && !player.dataset.initialized) {
     window.__marchenMusicAbort?.abort();
     const controller = new AbortController();
     const listenerOptions = { signal: controller.signal };
+    const positionKey = "marchen_music_player_bottom_v3";
+    const stateKey = "marchen_music_player_collapsed_v1";
+    const defaultBottom = 96;
+    let dragState = null;
+
     window.__marchenMusicAbort = controller;
     player.dataset.initialized = "true";
 
     const toggle = player.querySelector("[data-music-toggle]");
-    const positionKey = "marchen_music_player_bottom_v2";
-    const defaultBottom = 100;
-    let dragState = null;
-    let autoplayDone = false;
-    let autoplayPending = false;
-    let interactionAutoplayAbort = null;
+    const dragHandle = player.querySelector("[data-music-drag-handle]");
 
     const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
-    const getPlayerHeight = () => Math.max(46, player.getBoundingClientRect().height || player.offsetHeight || 46);
-    const getMaxBottom = () => {
-      const height = Math.min(getPlayerHeight(), window.innerHeight - 16);
-      return Math.max(8, window.innerHeight - height - 8);
-    };
+    const getStableHeight = () => Math.min(player.classList.contains("is-collapsed") ? 46 : 132, window.innerHeight - 16);
+    const getMaxBottom = () => Math.max(8, window.innerHeight - getStableHeight() - 8);
 
-    function getStoredBottom() {
+    function readStoredBottom() {
       const stored = Number.parseFloat(localStorage.getItem(positionKey) || "");
-      if (!Number.isFinite(stored)) return defaultBottom;
-      return clamp(stored, 8, getMaxBottom());
+      return Number.isFinite(stored) ? stored : defaultBottom;
     }
 
-    function applyMusicPosition(bottom = getStoredBottom()) {
-      player.style.setProperty("--music-y", `${clamp(bottom, 8, getMaxBottom())}px`);
+    function applyMusicPosition(bottom = readStoredBottom()) {
+      const next = clamp(bottom, 8, getMaxBottom());
+      player.style.setProperty("--music-y", `${next}px`);
+      return next;
     }
 
-    function syncStoredMusicPosition() {
-      const next = getStoredBottom();
-      localStorage.setItem(positionKey, String(next));
-      applyMusicPosition(next);
+    function persistMusicPosition(bottom = readStoredBottom()) {
+      localStorage.setItem(positionKey, String(applyMusicPosition(bottom)));
     }
 
     function getCurrentBottom() {
@@ -94,185 +64,26 @@ const hasPlaylist = Boolean(siteConfig.music.playlistId && !siteConfig.music.pla
       return clamp(window.innerHeight - rect.bottom, 8, getMaxBottom());
     }
 
-    function loadScript(src) {
-      return new Promise((resolve, reject) => {
-        const existed = document.querySelector(`script[src="${src}"]`);
-        if (existed) {
-          resolve();
-          return;
-        }
-
-        const script = document.createElement("script");
-        script.src = src;
-        script.async = true;
-        script.onload = resolve;
-        script.onerror = reject;
-        document.head.append(script);
-      });
+    function setCollapsed(collapsed) {
+      player.classList.toggle("is-collapsed", collapsed);
+      localStorage.setItem(stateKey, collapsed ? "true" : "false");
+      toggle?.setAttribute("aria-expanded", collapsed ? "false" : "true");
+      applyMusicPosition();
     }
 
-    function loadStyle(href) {
-      if (document.querySelector(`link[href="${href}"]`)) return;
-      const link = document.createElement("link");
-      link.rel = "stylesheet";
-      link.href = href;
-      document.head.append(link);
-    }
+    const storedCollapsed = localStorage.getItem(stateKey);
+    setCollapsed(storedCollapsed === null ? true : storedCollapsed === "true");
+    persistMusicPosition();
 
-    function syncLyricFallback() {
-      const lrc = player.querySelector(".aplayer-lrc");
-      if (!(lrc instanceof HTMLElement)) return;
-
-      const ensureHint = () => {
-        let hint = lrc.querySelector(".marchen-lrc-empty");
-        if (!hint) {
-          hint = document.createElement("p");
-          hint.className = "marchen-lrc-empty";
-          hint.textContent = "这是一首纯音乐哦~";
-          lrc.append(hint);
-        }
-
-        const lines = Array.from(lrc.querySelectorAll("p:not(.marchen-lrc-empty)"));
-        const hasText = lines.some((line) => {
-          const text = line.textContent?.trim() ?? "";
-          return text && !/^(loading|加载中|暂无歌词|no lyric|not available)$/i.test(text);
-        });
-        lrc.classList.toggle("is-empty", !hasText);
-      };
-
-      ensureHint();
-      if (lrc.dataset.marchenObserved === "true") return;
-      lrc.dataset.marchenObserved = "true";
-      new MutationObserver(ensureHint).observe(lrc, { childList: true, subtree: true, characterData: true });
-      window.setTimeout(ensureHint, 1200);
-      window.setTimeout(ensureHint, 3200);
-    }
-
-    function getAplayerInstance() {
-      const meting = player.querySelector("meting-js");
-      return meting && typeof meting === "object" && "aplayer" in meting ? meting.aplayer : null;
-    }
-
-    function waitForAplayer(timeout = 8000) {
-      const existed = getAplayerInstance();
-      if (existed?.audio) return Promise.resolve(existed);
-
-      return new Promise((resolve) => {
-        const startedAt = performance.now();
-        const timer = window.setInterval(() => {
-          const instance = getAplayerInstance();
-          if (instance?.audio || performance.now() - startedAt > timeout) {
-            window.clearInterval(timer);
-            resolve(instance?.audio ? instance : null);
-          }
-        }, 120);
-      });
-    }
-
-    function disarmInteractionAutoplay() {
-      const aborter = interactionAutoplayAbort;
-      interactionAutoplayAbort = null;
-      aborter?.abort();
-    }
-
-    async function playReadyInstance() {
-      if (autoplayDone || !hasPlaylist) return false;
-      try {
-        const audio = getAplayerInstance()?.audio;
-        if (!(audio instanceof HTMLAudioElement)) return false;
-        await audio.play();
-        autoplayDone = true;
-        disarmInteractionAutoplay();
-        return true;
-      } catch {
-        return false;
-      }
-    }
-
-    async function waitAndPlayReadyInstance() {
-      if (autoplayDone || autoplayPending || !hasPlaylist) return false;
-      autoplayPending = true;
-      try {
-        await waitForAplayer();
-        return await playReadyInstance();
-      } finally {
-        autoplayPending = false;
-      }
-    }
-
-    async function playWhenPossible() {
-      if (autoplayDone || !hasPlaylist) return false;
-      try {
-        await ensureMeting();
-        return await waitAndPlayReadyInstance();
-      } catch {
-        return false;
-      }
-    }
-
-    function tryAutoplayWithFallback() {
-      playWhenPossible().then((played) => {
-        if (!played) armInteractionAutoplay();
-      });
-    }
-
-    function armInteractionAutoplay() {
-      if (!hasPlaylist || autoplayDone || interactionAutoplayAbort) return;
-      interactionAutoplayAbort = new AbortController();
-      const options = { capture: true, passive: true, signal: interactionAutoplayAbort.signal };
-      const retry = () => {
-        playReadyInstance().then((played) => {
-          if (played) return;
-          playWhenPossible().then((nextPlayed) => {
-            if (nextPlayed) disarmInteractionAutoplay();
-          });
-        });
-      };
-
-      ["pointerdown", "click", "keydown", "touchstart"].forEach((eventName) => {
-        document.addEventListener(eventName, retry, options);
-      });
-    }
-
-    controller.signal.addEventListener("abort", () => {
-      disarmInteractionAutoplay();
-    });
-
-    async function ensureMeting() {
-      if (!hasPlaylist) return;
-      if (window.__marchenMetingLoading) return window.__marchenMetingLoading;
-
-      window.meting_api = musicConfig.metingApi;
-      loadStyle("/vendor/aplayer/APlayer.min.css");
-      window.__marchenMetingLoading = loadScript("/vendor/aplayer/APlayer.min.js")
-        .then(() => loadScript("/vendor/meting/Meting.min.js"))
-        .then(() => {
-          syncStoredMusicPosition();
-          window.setTimeout(syncLyricFallback, 500);
-          window.setTimeout(syncLyricFallback, 1800);
-        })
-        .catch(() => {
-          const label = player.querySelector(".music-label strong");
-          if (label) label.textContent = "播放器资源加载失败";
-        });
-      return window.__marchenMetingLoading;
-    }
-
-    function collapseAplayerList() {
-      const list = player.querySelector(".aplayer-list");
-      if (list instanceof HTMLElement) list.classList.add("aplayer-list-hide");
-    }
-
-    toggle?.addEventListener("click", () => {
-      if (player.dataset.dragging === "true") return;
-      const collapsed = player.classList.toggle("is-collapsed");
-      if (collapsed) {
-        collapseAplayerList();
-        return;
-      }
-      ensureMeting().then(() => playWhenPossible());
-      window.setTimeout(syncLyricFallback, 400);
-    }, listenerOptions);
+    toggle?.addEventListener(
+      "click",
+      () => {
+        if (player.dataset.dragging === "true") return;
+        setCollapsed(!player.classList.contains("is-collapsed"));
+        persistMusicPosition();
+      },
+      listenerOptions
+    );
 
     const startDrag = (event) => {
       if (!(event.currentTarget instanceof HTMLElement)) return;
@@ -292,15 +103,14 @@ const hasPlaylist = Boolean(siteConfig.music.playlistId && !siteConfig.music.pla
       if (Math.abs(delta) > 3) dragState.moved = true;
       if (!dragState.moved) return;
 
-      const next = clamp(dragState.startBottom + delta, 8, getMaxBottom());
       player.dataset.dragging = "true";
-      applyMusicPosition(next);
+      applyMusicPosition(dragState.startBottom + delta);
     };
 
     const finishDrag = (event) => {
       if (!dragState || dragState.pointerId !== event.pointerId) return;
       if (dragState.moved) {
-        localStorage.setItem(positionKey, String(getCurrentBottom()));
+        persistMusicPosition(getCurrentBottom());
         window.setTimeout(() => {
           player.dataset.dragging = "false";
         }, 0);
@@ -310,19 +120,23 @@ const hasPlaylist = Boolean(siteConfig.music.playlistId && !siteConfig.music.pla
       dragState = null;
     };
 
-    [toggle, player.querySelector("[data-music-drag-handle]")].forEach((handle) => {
+    [toggle, dragHandle].forEach((handle) => {
       handle?.addEventListener("pointerdown", startDrag, listenerOptions);
       handle?.addEventListener("pointermove", moveDrag, listenerOptions);
       handle?.addEventListener("pointerup", finishDrag, listenerOptions);
       handle?.addEventListener("pointercancel", finishDrag, listenerOptions);
     });
-    window.addEventListener("resize", () => {
-      syncStoredMusicPosition();
-    }, listenerOptions);
 
-    syncStoredMusicPosition();
-    armInteractionAutoplay();
-    window.setTimeout(tryAutoplayWithFallback, 600);
+    window.addEventListener("resize", () => persistMusicPosition(), listenerOptions);
+    document.addEventListener("astro:before-swap", () => applyMusicPosition(), listenerOptions);
+    document.addEventListener("astro:after-swap", () => applyMusicPosition(), listenerOptions);
+  }
+
+  initMarchenMusicPlayer();
+  if (!window.__marchenMusicPageLoadBound) {
+    document.addEventListener("astro:page-load", initMarchenMusicPlayer);
+    document.addEventListener("astro:after-swap", initMarchenMusicPlayer);
+    window.__marchenMusicPageLoadBound = true;
   }
 </script>
 
@@ -330,11 +144,12 @@ const hasPlaylist = Boolean(siteConfig.music.playlistId && !siteConfig.music.pla
   .music-bar {
     position: fixed;
     right: 0;
-    bottom: var(--music-y, 100px);
+    bottom: var(--music-y, 96px);
     z-index: 60;
     width: min(680px, calc(100vw - 58px));
     transform: translateX(0);
     transition: transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    will-change: transform;
   }
 
   .music-bar.is-collapsed {
@@ -384,13 +199,14 @@ const hasPlaylist = Boolean(siteConfig.music.playlistId && !siteConfig.music.pla
     display: grid;
     grid-template-columns: 148px minmax(0, 1fr);
     gap: 12px;
-    align-items: center;
+    align-items: stretch;
+    height: 132px;
     padding: 12px;
   }
 
   .music-label {
     display: flex;
-    min-height: 104px;
+    min-width: 0;
     flex-direction: column;
     align-items: flex-start;
     justify-content: center;
@@ -405,6 +221,7 @@ const hasPlaylist = Boolean(siteConfig.music.playlistId && !siteConfig.music.pla
   .music-label span,
   .music-label strong {
     display: block;
+    max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -423,242 +240,34 @@ const hasPlaylist = Boolean(siteConfig.music.playlistId && !siteConfig.music.pla
     font-weight: 900;
   }
 
-  .meting-host {
-    min-width: 0;
-    overflow: hidden;
-  }
-
-  .music-empty {
-    display: grid;
-    grid-template-columns: 34px minmax(0, 1fr);
-    align-items: center;
-    gap: 10px;
-    min-height: 58px;
-    color: var(--muted);
-  }
-
-  .music-empty > svg {
-    color: var(--blue);
-  }
-
-  .music-empty strong,
-  .music-empty em {
+  .music-frame {
     display: block;
-    font-style: normal;
-  }
-
-  .music-empty strong {
-    color: var(--ink);
-    font-size: 0.92rem;
-  }
-
-  .music-empty em {
-    font-size: 0.8rem;
-    line-height: 1.45;
-  }
-
-  .music-empty code {
-    border-radius: 4px;
-    background: var(--code-inline-bg);
-    padding: 1px 5px;
-    color: var(--code-inline-text);
-  }
-
-  .meting-host :global(.aplayer) {
-    width: 100% !important;
-    margin: 0;
+    width: 100%;
+    height: 108px;
+    min-width: 0;
+    border: 0;
     border-radius: 7px;
     background: transparent;
-    box-shadow: none;
-    color: var(--ink);
-    font-family: var(--font-sans);
-    overflow: hidden;
-  }
-
-  .meting-host :global(.aplayer .aplayer-body) {
-    position: relative;
-    display: block;
-    width: 100%;
-    min-height: 104px;
-    background: transparent;
-    overflow: hidden;
-  }
-
-  .meting-host :global(.aplayer .aplayer-pic) {
-    float: left;
-    width: 96px !important;
-    height: 96px !important;
-    border-radius: 6px;
-  }
-
-  .meting-host :global(.aplayer.aplayer-withlrc .aplayer-pic) {
-    width: 96px !important;
-    height: 96px !important;
-  }
-
-  .meting-host :global(.aplayer .aplayer-info) {
-    min-width: 0;
-    height: 104px !important;
-    margin-left: 96px !important;
-    border-bottom: 0;
-    padding: 12px 10px 0;
-    overflow: hidden;
-  }
-
-  .meting-host :global(.aplayer.aplayer-withlrc .aplayer-info) {
-    height: 104px !important;
-    margin-left: 96px !important;
-  }
-
-  .meting-host :global(.aplayer .aplayer-info .aplayer-music) {
-    width: calc(100% - 4px);
-    min-width: 0;
-    margin-left: 0;
-    margin-bottom: 4px;
-  }
-
-  .meting-host :global(.aplayer .aplayer-info .aplayer-controller) {
-    display: flex;
-    align-items: center;
-    min-width: 0;
-    margin-top: -4px;
-  }
-
-  .meting-host :global(.aplayer .aplayer-info .aplayer-controller .aplayer-bar-wrap) {
-    min-width: 0;
-  }
-
-  .meting-host :global(.aplayer .aplayer-info .aplayer-controller .aplayer-time) {
-    flex: 0 0 auto;
-    white-space: nowrap;
-  }
-
-  .meting-host :global(.aplayer .aplayer-info .aplayer-controller .aplayer-bar-wrap .aplayer-bar) {
-    height: 3px;
-    background: var(--border);
-  }
-
-  .meting-host :global(.aplayer .aplayer-info .aplayer-controller .aplayer-bar-wrap .aplayer-bar .aplayer-loaded),
-  .meting-host :global(.aplayer .aplayer-info .aplayer-controller .aplayer-bar-wrap .aplayer-bar .aplayer-played) {
-    height: 3px;
-  }
-
-  .meting-host :global(.aplayer .aplayer-title) {
-    color: var(--ink);
-    font-weight: 900;
-  }
-
-  .meting-host :global(.aplayer .aplayer-author) {
-    color: var(--muted);
-  }
-
-  .meting-host :global(.aplayer .aplayer-lrc) {
-    width: min(360px, calc(100% - 12px));
-    margin: 2px 0 8px;
-    height: 42px;
-    clear: both;
-    text-align: left;
-  }
-
-  .meting-host :global(.aplayer .aplayer-lrc::before),
-  .meting-host :global(.aplayer .aplayer-lrc::after) {
-    display: none;
-  }
-
-  .meting-host :global(.aplayer .aplayer-lrc p) {
-    color: color-mix(in srgb, var(--muted) 68%, transparent);
-    font-family: var(--font-sans);
-    font-size: 0.78rem;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    text-align: left !important;
-  }
-
-  .meting-host :global(.aplayer .aplayer-lrc p.aplayer-lrc-current) {
-    color: color-mix(in srgb, var(--orange) 76%, var(--muted));
-    font-weight: 900;
-  }
-
-  .meting-host :global(.aplayer .aplayer-lrc .marchen-lrc-empty) {
-    display: none;
-    color: var(--muted);
-    opacity: 0.78;
-  }
-
-  .meting-host :global(.aplayer .aplayer-lrc.is-empty .aplayer-lrc-contents) {
-    display: none;
-  }
-
-  .meting-host :global(.aplayer .aplayer-lrc.is-empty .marchen-lrc-empty) {
-    display: block;
-    opacity: 1;
-  }
-
-  .meting-host :global(.aplayer .aplayer-list) {
-    clear: both;
-    width: 100%;
-    max-height: 180px;
-    overflow: hidden;
-    margin-top: 10px;
-    border-color: var(--border);
-    border-radius: 0 0 7px 7px;
-    background: var(--surface-strong);
-  }
-
-  .meting-host :global(.aplayer .aplayer-list ol) {
-    max-height: 180px !important;
-    overflow-y: auto;
-  }
-
-  .meting-host :global(.aplayer .aplayer-list ol li) {
-    border-top-color: var(--border-soft);
-    color: var(--ink-2);
-  }
-
-  .meting-host :global(.aplayer .aplayer-list ol li.aplayer-list-light) {
-    background: var(--orange-soft);
+    color-scheme: light dark;
   }
 
   @media (max-width: 760px) {
     .music-bar {
-      bottom: var(--music-y, 100px);
       width: calc(100vw - 52px);
     }
 
     .music-shell {
       grid-template-columns: 1fr;
-      gap: 8px;
+      height: 122px;
+      gap: 0;
     }
 
     .music-label {
       display: none;
     }
 
-    .meting-host :global(.aplayer .aplayer-pic) {
-      width: 82px !important;
-      height: 82px !important;
-    }
-
-    .meting-host :global(.aplayer.aplayer-withlrc .aplayer-pic) {
-      width: 82px !important;
-      height: 82px !important;
-    }
-
-    .meting-host :global(.aplayer .aplayer-info) {
-      height: 92px !important;
-      margin-left: 82px !important;
-      padding-top: 9px;
-    }
-
-    .meting-host :global(.aplayer.aplayer-withlrc .aplayer-info) {
-      height: 92px !important;
-      margin-left: 82px !important;
-    }
-
-    .meting-host :global(.aplayer .aplayer-lrc) {
-      width: min(260px, calc(100% - 10px));
-      height: 30px;
-      margin-bottom: 6px;
+    .music-frame {
+      height: 98px;
     }
   }
 </style>
